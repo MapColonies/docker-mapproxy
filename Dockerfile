@@ -15,7 +15,7 @@ RUN apt-get install -y \
     zlib1g-dev \
     libfreetype6-dev \
     python-virtualenv
-RUN pip install Shapely Pillow MapProxy uwsgi
+RUN pip install Shapely Pillow MapProxy uwsgi boto3 botocore
 EXPOSE 8080
 ENV \
     # Run
