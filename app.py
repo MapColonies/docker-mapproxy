@@ -15,7 +15,6 @@ from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
 )
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import (
-    # ConsoleSpanExporter,
     SimpleSpanProcessor
 )
 from opentelemetry.instrumentation.wsgi import OpenTelemetryMiddleware
