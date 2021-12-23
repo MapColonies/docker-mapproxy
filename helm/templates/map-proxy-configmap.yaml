@@ -1,0 +1,23 @@
+{{- if .Values.mapProxy.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "map-proxy.fullname" . }}-map-proxy-configmap
+  labels:
+    app: {{ template "map-proxy.name" . }}
+    component: map-proxy-configmap
+    environment: {{ .Values.environment }}
+    release: {{ .Release.Name }}
+data:
+  S3_ENDPOINT_URL: {{ quote .Values.shared.S3.ENDPOINT_URL }}
+  S3_BUCKET:  {{ quote .Values.shared.S3.BUCKET }}
+  AWS_HTTPS: {{ quote .Values.mapProxy.env.AWS_HTTPS }}
+  {{- if .Values.caFileName -}}
+  REQUESTS_CA_BUNDLE: {{ quote .Values.caFileName }}
+  {{- end }}
+  UWSGI_INI: {{ tpl (.Files.Get "config/mapProxyUwsgi.ini") . | quote }}
+  LOG_INI: {{ tpl (.Files.Get "config/log.ini") . | quote }}
+  TELEMETRY_TRACING_ENABLED: "{{ template "map-proxy.tracingEnabled" . }}"
+  TELEMETRY_TRACING_ENDPOINT: "{{ template "map-proxy.tracingUrl" . }}"
+  TELEMETRY_SAMPLING_RATIO_DENOMINATOR: {{ quote .Values.tracing.sampling.ratioDenominator }}
+{{- end }}

@@ -1,0 +1,135 @@
+# ====================================================================================================
+# ====================================================================================================
+# ==================================Global Configurations=============================================
+# ====================================================================================================
+# ====================================================================================================
+pullSecretName: acr-registry
+imagePullPolicy: Always
+caLocation: null
+caFileName: null
+caSecretName: null
+opensslName: null
+openSSL: null
+splunkIndex: ""
+
+global:
+  dnshost: apps.v0h0bdx6.eastus.aroapp.io
+  tracing: {}
+
+environment: development
+# cloudProvider is provider where you are going to deploy map exporter, it could be: aws, minikube
+cloudProvider: azure
+
+tracing:
+  enabled: true
+  url: http://localhost:55681/v1/trace
+  sampling:
+    ratioDenominator: 10
+
+# ====================================================================================================
+# Ingress variables
+# ====================================================================================================
+
+ingress:
+  enabled: false
+  host: "*"
+  mapProxyPath: /mapproxy
+
+route: #for openShift only
+  enabled: false
+  mapProxyPath: /
+  mapProxyApiPath: /
+  tls: false
+
+# ====================================================================================================
+# secret initialization
+# ====================================================================================================
+# !!!!!! DO NOT UPLOAD WITH VALUES !!!!!!!!
+# values should be overridden with deployment command
+
+s3Secret:
+  enabled: false
+  externalName: ""
+  mapProxy:
+    accessKeyId: ""
+    secretAccessKey: ""
+
+# ====================================================================================================
+# Variables for sources PVC
+# ====================================================================================================
+
+storage:
+  enabled: true
+  storageClass: azure-file
+  accessModes: ReadWriteMany
+  storageSize: 5Gi
+  sourcesSubPath: tiles
+  configSubPath: config/mapproxy.yaml
+  pvc:
+    name: internal-pvc
+    create: false
+  pv:
+    enabled: false
+    hostPath: null
+
+# ====================================================================================================
+# ====================================================================================================
+# ==================================Pods Configurations===============================================
+# ====================================================================================================
+# ====================================================================================================
+
+ports:
+  mapProxy:
+    port: 80
+    uwsgiPort: 3031
+    targetPort: 8080
+    uwsgiProcesses: 5
+
+probe:
+  mapProxy:
+    readinessPath: /service?REQUEST=GetCapabilities
+    initialDelaySeconds: 30
+    timeoutSeconds: 1
+
+# ====================================================================================================
+# Shared variables for multiple pods
+# ====================================================================================================
+
+shared:
+  MAPPROXY_CONFIG_PROVIDER: db
+  ssl: # external paths
+    CA_DIR: /opt/certs/ca/
+    KEY_DIR: /opt/certs/key/
+    CERT_DIR: /opt/certs/cert/
+    CA_FILE_LOCATION: /opt/certs/ca/ca.pem
+    KEY_FILE_LOCATION: /opt/certs/key/key.pem
+    CERT_FILE_LOCATION: /opt/certs/cert/cert.pem
+  S3:
+    ENDPOINT_URL: http://localhost:9000
+    BUCKET: raster
+    SSL_ENABLED: false
+    FORCE_PATH_STYLE: true
+
+# ====================================================================================================
+# Variables for map proxy
+# ====================================================================================================
+
+mapProxy:
+  enabled: true
+  mapProxyImage: "acrarolibotnonprod.azurecr.io/mapproxy"
+  mapProxyImageTag: 110
+  env:
+    requestsLogLevel: WARNING
+    logLevel: WARNING
+    AWS_HTTPS: false
+    OPENAPI_FILE_PATH: ./openapi3.yaml
+  NODE_PORT: 30001
+  replicaCount: 1
+  resources:
+    enabled: true
+    requests:
+      memory: "1Gi"
+      cpu: "1"
+    limits:
+      memory: "2Gi"
+      cpu: "1"

@@ -1,0 +1,162 @@
+{{- if .Values.mapProxy.enabled -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "map-proxy.fullname" . }}-map-proxy
+  annotations: 
+    collectord.io/index: {{ quote .Values.splunkIndex }}
+    co.elastic.logs.{{ .Release.Name }}-map-proxy/enabled: 'true'
+    co.elastic.logs.{{ .Release.Name }}-map-proxy/module: 'nginx'
+    co.elastic.logs.{{ .Release.Name }}-map-proxy/fileset.stdout: 'access'
+    co.elastic.logs.{{ .Release.Name }}-map-proxy/fileset.stderr: 'error'
+  labels:
+    app: {{ template "map-proxy.name" . }}
+    component: map-proxy-deployment
+    environment: {{ .Values.environment }}
+    release: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.mapProxy.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "map-proxy.name" . }}
+      release: {{ .Release.Name }}
+      run: {{ .Release.Name }}-map-proxy
+  template:
+    metadata:
+      labels:
+        app: {{ template "map-proxy.name" . }}
+        release: {{ .Release.Name }}
+        run: {{ .Release.Name }}-map-proxy
+    spec:
+      imagePullSecrets:
+        - name: {{ .Values.pullSecretName }}
+      volumes:
+        - name: mapproxy-config
+          emptyDir: {} 
+        {{- if .Values.caSecretName -}}
+        - name: root-ca
+          secret:
+            secretName: {{ .Values.caSecretName }}
+        {{- end }}
+        {{- if .Values.caSecretName -}}
+        - name: open-ssl
+          secret:
+            secretName: {{ .Values.opensslName }}
+        {{- end }}
+        - name: uwsgi-config
+          configMap:
+            name: {{ template "map-proxy.fullname" . }}-map-proxy-configmap
+            items:
+            - key: "UWSGI_INI"
+              path: "uwsgi.ini"
+            - key: "LOG_INI"
+              path: "log.ini"
+        {{- if .Values.storage.enabled }}
+        - name: sources-storage
+          persistentVolumeClaim:
+            claimName: {{ .Values.storage.pvc.name }}
+        {{- end }}
+      containers:
+        ## MapProxy Deployment
+        - name: {{ .Release.Name }}-map-proxy
+          image: "{{ .Values.mapProxy.mapProxyImage }}:{{ .Values.mapProxy.mapProxyImageTag }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          volumeMounts:
+          - mountPath: /mapproxy/mapproxy.yaml
+            name: mapproxy-config
+            subPath: mapproxy.yaml
+          {{- if .Values.caLocation -}}
+          - mountPath: {{ quote .Values.caLocation }}
+            name: root-ca
+          {{- end }}
+          {{- if .Values.openSSL -}}
+          - mountPath: {{ quote .Values.openSSL }}
+            name: open-ssl
+            subPath: openssl.cnf
+          {{- end }}
+          - mountPath: "/mapproxy/uwsgi.ini"
+            name: uwsgi-config
+            subPath: uwsgi.ini
+          - mountPath: "/mapproxy/log.ini"
+            name: uwsgi-config
+            subPath: log.ini
+          {{- if .Values.storage.enabled }}
+          - mountPath: /layerSources
+            name: sources-storage
+            subPath: {{ .Values.storage.sourcesSubPath }}
+          {{- end }}
+          ports:
+            - name: uwsgi
+              containerPort: 3031
+              protocol: TCP
+          {{- if .Values.mapProxy.resources.enabled }}
+          resources:
+            requests:
+              memory: {{ .Values.mapProxy.resources.requests.memory }}
+              cpu: {{ .Values.mapProxy.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.mapProxy.resources.limits.memory }}
+              cpu: {{ .Values.mapProxy.resources.limits.cpu }}
+          {{- end }}
+          env:
+            {{- if or (eq (upper .Values.shared.MAPPROXY_CONFIG_PROVIDER) "S3") .Values.s3Secret.enabled }}
+            - name: S3_ENDPOINT_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ template "map-proxy.fullname" . }}-map-proxy-configmap
+                  key: S3_ENDPOINT_URL
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-s3-secret
+                  key: accessKeyId
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-s3-secret
+                  key: secretAccessKey
+            - name: S3_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ template "map-proxy.fullname" . }}-map-proxy-configmap
+                  key: S3_BUCKET
+            - name: AWS_HTTPS
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ template "map-proxy.fullname" . }}-map-proxy-configmap
+                  key: AWS_HTTPS
+            {{- end }}
+            {{- if .Values.caFileName }}
+            - name: REQUESTS_CA_BUNDLE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ template "map-proxy.fullname" . }}-map-proxy-configmap
+                  key: REQUESTS_CA_BUNDLE
+            {{- end }}
+            - name: TELEMETRY_TRACING_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ template "map-proxy.fullname" . }}-map-proxy-configmap
+                  key: TELEMETRY_TRACING_ENABLED
+            - name: TELEMETRY_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ template "map-proxy.fullname" . }}-map-proxy-configmap
+                  key: TELEMETRY_TRACING_ENDPOINT
+            - name: TELEMETRY_SAMPLING_RATIO_DENOMINATOR
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ template "map-proxy.fullname" . }}-map-proxy-configmap
+                  key: TELEMETRY_SAMPLING_RATIO_DENOMINATOR
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "service.name=mapcolonies,application=mapproxy"
+            - name: OTEL_SERVICE_NAME
+              value: "mapproxy"
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.probe.mapProxy.readinessPath }}
+              port: {{ .Values.ports.mapProxy.targetPort }}
+            initialDelaySeconds: {{ .Values.probe.mapProxy.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.probe.mapProxy.timeoutSeconds }}
+{{- end }}

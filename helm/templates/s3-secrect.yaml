@@ -1,0 +1,10 @@
+{{- if and .Values.s3Secret.enabled (not .Values.s3Secret.externalName) -}}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-s3-secret
+type: Opaque
+stringData:
+  accessKeyId: {{ quote .Values.s3Secret.mapProxy.accessKeyId }}
+  secretAccessKey: {{ quote .Values.s3Secret.mapProxy.secretAccessKey }}
+{{- end }}

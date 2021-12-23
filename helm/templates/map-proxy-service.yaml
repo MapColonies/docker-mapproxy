@@ -1,0 +1,32 @@
+{{- if .Values.mapProxy.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "map-proxy.fullname" . }}-map-proxy
+  labels:
+    app: {{ template "map-proxy.name" . }}
+    component: map-proxy-service
+    environment: {{ .Values.environment }}
+    release: {{ .Release.Name }}
+spec:
+  # In case cloudProavider=azure
+  {{- if eq .Values.cloudProvider "azure" }}
+  type: ClusterIP
+  {{- end }}
+  # In case cloudProvider=minikube
+  {{- if eq .Values.cloudProvider "minikube" }}
+  type: NodePort
+  {{- end }}
+  ports:
+    - port: {{ .Values.ports.mapProxy.uwsgiPort }}
+      targetPort: {{ .Values.ports.mapProxy.uwsgiPort }}
+      protocol: TCP
+      name: http
+      {{- if eq .Values.cloudProvider "minikube" }}
+      nodePort: {{ .Values.mapProxy.NODE_PORT }}
+      {{- end }}
+  selector:
+    app: {{ template "map-proxy.name" . }}
+    release: {{ .Release.Name }}
+    run: {{ .Release.Name }}-map-proxy
+{{- end }}

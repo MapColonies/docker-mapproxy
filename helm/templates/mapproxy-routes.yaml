@@ -1,0 +1,19 @@
+{{- if .Values.route.enabled -}}
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ template "map-proxy.fullname" . }}-map-proxy-route
+  annotations:
+    haproxy.router.openshift.io/rewrite-target: /
+spec:
+  path:  {{ .Values.route.mapProxyPath }}
+  to:
+    kind: Service
+    name: {{ template "map-proxy.fullname" . }}-nginx
+  {{- if .Values.route.tls -}}
+  tls:
+    termination: edge
+  {{- end -}}
+{{- end -}}
+
+

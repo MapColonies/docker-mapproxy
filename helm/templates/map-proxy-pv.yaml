@@ -1,0 +1,21 @@
+{{- if and .Values.storage.pv.enabled -}}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: layer-sources-pv
+  labels:
+    app: {{ template "map-proxy.name" . }}
+    component: map-proxy
+    environment: {{ .Values.environment }}
+    release: {{ .Release.Name }}
+spec:
+  {{- if .Values.storage.storageClass }}
+  storageClassName: {{ .Values.storage.storageClass }}
+  {{- end }}
+  capacity:
+    storage:  {{ .Values.storage.storageSize }}
+  accessModes:
+    - {{ .Values.storage.accessModes }}
+  hostPath:
+    path: {{ .Values.storage.pv.hostPath }}
+{{- end }}
