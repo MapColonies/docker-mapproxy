@@ -6,10 +6,6 @@ metadata:
   name: {{ template "map-proxy.fullname" . }}-map-proxy
   annotations: 
     collectord.io/index: {{ quote .Values.splunkIndex }}
-    co.elastic.logs.{{ .Release.Name }}-map-proxy/enabled: 'true'
-    co.elastic.logs.{{ .Release.Name }}-map-proxy/module: 'nginx'
-    co.elastic.logs.{{ .Release.Name }}-map-proxy/fileset.stdout: 'access'
-    co.elastic.logs.{{ .Release.Name }}-map-proxy/fileset.stderr: 'error'
   labels:
     app: {{ template "map-proxy.name" . }}
     component: map-proxy-deployment
