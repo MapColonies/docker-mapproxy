@@ -29,9 +29,16 @@ application = make_wsgi_app(r'/mapproxy/mapproxy.yaml', reloader=True)
 
 # add cors support
 if(os.environ.get('CORS_ENABLED', 'false').lower() == 'true'):
+    def corsOverrideMiddleware(environ,start_response):
+        def start_response_override(status, response_headers, exc_info=None):
+            filtered_headers = [header for header in response_headers if header[0] != 'Access-control-allow-origin']
+            return start_response(status,filtered_headers,exc_info)
+        return application(environ,start_response_override)
+
+
     allowed_headers = os.environ.get('CORS_ALLOWED_HEADERS')
     allowed_origin = os.environ.get('CORS_ALLOWED_ORIGIN')
-    application = CORS(application, headers=allowed_headers, methods="GET,OPTIONS", origin=allowed_origin)
+    application = CORS(corsOverrideMiddleware, headers=allowed_headers, methods="GET,OPTIONS", origin=allowed_origin)
 
 # Get telemetry endpoint from env
 endpoint = os.environ.get('TELEMETRY_ENDPOINT', 'localhost:4317')
