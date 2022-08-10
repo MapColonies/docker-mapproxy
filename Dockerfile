@@ -1,24 +1,40 @@
 #--------- Generic stuff all our Dockerfiles should start with so we get caching ------------
-FROM python:3.7.10
+FROM python:3.10.6
 MAINTAINER Tim Sutton<tim@kartoza.com>
 
 #-------------Application Specific Stuff ----------------------------------------------------
 RUN apt-get -y update && \
     apt-get install -y \
-    gettext \
-    python-yaml \
+    python3-virtualenv \
     libgeos-dev \
-    python-lxml \
+    python3-lxml \
     libgdal-dev \
+    #built pillow 
+    #python-pil \
+    #depecndencies for using new pillow source
     build-essential \
     python-dev \
     libjpeg-dev \
     zlib1g-dev \
-    libfreetype6-dev \
-    python-virtualenv
+    libfreetype6-dev 
+#pip is used instead of the following
+#python-yaml \
+#python-shaply \
+#libproj12 \
+
+
+#    gettext \
+#gosu awscli; \
+# verify that the binary works
+#gosu nobody true
 
 COPY requirements.txt /requirements.txt
 RUN pip install -r requirements.txt
+
+# Cleanup resources
+RUN apt-get -y --purge autoremove  \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 EXPOSE 8080
 ENV \
