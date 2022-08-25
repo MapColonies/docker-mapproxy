@@ -40,3 +40,4 @@ class AuthFilter(object):
             return {'authorized': 'none'}
         # allow everything that isn't blocked
         return {'authorized': 'full'}
+        
