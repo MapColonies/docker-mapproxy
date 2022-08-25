@@ -27,10 +27,10 @@ class AuthFilter(object):
                 token = query.get(self.authQueryName,[None])[0]
             if(token):
                 try:
-                    pyload = token.split('.')
-                    pyload = base64.urlsafe_b64decode(pyload + '=' * (4 - len(pyload) % 4))
-                    pyload = json.loads(pyload)
-                    domains = pyload['d']
+                    payload = token.split('.')
+                    payload = base64.urlsafe_b64decode(payload + '=' * (4 - len(payload) % 4))
+                    payload = json.loads(payload)
+                    domains = payload['d']
                     if self.validDomain in domains:
                         #allow authorized wms
                         return {'authorized': 'full'}
@@ -40,4 +40,3 @@ class AuthFilter(object):
             return {'authorized': 'none'}
         # allow everything that isn't blocked
         return {'authorized': 'full'}
-        
