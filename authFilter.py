@@ -10,8 +10,9 @@ class AuthFilter(object):
     """
     def __init__(self, app,validDomain,autHeaderName = None, authQueryName = 'token'):
         self.app = app
-        self.autHeaderName = autHeaderName.lower() if (autHeaderName != None) else None
-        self.authQueryName = authQueryName.lower() if (authQueryName != None) else None
+        self.autHeaderName = autHeaderName.upper() if (autHeaderName != None) else None
+        self.upperAuthQueryName = authQueryName.upper() if (authQueryName != None) else None
+        self.lowerAuthQueryName = authQueryName.lower() if (authQueryName != None) else None
         self.validDomain = validDomain
 
     def __call__(self, environ, start_response):
@@ -22,12 +23,12 @@ class AuthFilter(object):
     def authorize(self, service, layers=[], environ=None, **kw):
         if service.startswith('wms.'):
             token = environ.get(f'HTTP_{self.autHeaderName}') if(self.autHeaderName) else None
-            if(token == None and self.authQueryName):
+            if(token == None and self.upperAuthQueryName):
                 query = parse_qs(environ['QUERY_STRING'])
-                token = query.get(self.authQueryName,[None])[0]
+                token = query.get(self.upperAuthQueryName,query.get(self.lowerAuthQueryName,[None]))[0]
             if(token):
                 try:
-                    payload = token.split('.')
+                    payload = token.split('.')[1]
                     payload = base64.urlsafe_b64decode(payload + '=' * (4 - len(payload) % 4))
                     payload = json.loads(payload)
                     domains = payload['d']
