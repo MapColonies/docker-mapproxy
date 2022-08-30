@@ -25,7 +25,9 @@ class AuthFilter(object):
             token = environ.get(f'HTTP_{self.autHeaderName}') if(self.autHeaderName) else None
             if(token == None and self.upperAuthQueryName):
                 query = parse_qs(environ['QUERY_STRING'])
-                token = query.get(self.upperAuthQueryName,query.get(self.lowerAuthQueryName,[None]))[0]
+                token = query.get(self.upperAuthQueryName,[None])[0]
+                if(not token):
+                    token = query.get(self.lowerAuthQueryName,[None])[0]
             if(token):
                 try:
                     payload = token.split('.')[1]
