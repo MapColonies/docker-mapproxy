@@ -1,39 +1,4 @@
-{{- if .Values.mapproxy.enabled -}}
-
-{{- $releaseName := .Release.Name -}}
-{{- $chartName := include "mapproxy.name" . -}}
-{{- $cloudProviderDockerRegistryUrl := include "mapproxy.cloudProviderDockerRegistryUrl" . -}}
-{{- $cloudProviderImagePullSecretName := include "mapproxy.cloudProviderImagePullSecretName" . -}}
-{{- $caSecretName := ternary .Values.authentication.ca.externalSecretName (printf "%s%s" .Release.Name "-root-ca") .Values.authentication.ca.useExternal }}
-{{- $sslSecretName := ternary .Values.authentication.ssl.externalSecretName (printf "%s%s" .Release.Name "-open-ssl") .Values.authentication.ssl.useExternal }}
-{{- $postgresSecretName := ternary .Values.rasterCommon.db.secrets.externalSecretName (printf "%s%s" .Release.Name "-postgres-secret") .Values.rasterCommon.db.secrets.useExternal }}
-{{- $s3SecretName := ternary .Values.rasterCommon.storage.s3.secretName (printf "%s%s" .Release.Name  "-s3-secret") (ne .Values.rasterCommon.storage.s3.secretName "") }}
-
-{{- if .Values.authentication.ca.enabled }}
-{{- if and .Values.authentication.ca.useExternal (not .Values.authentication.ca.externalSecretName) }}
-{{- fail "When using external ca secret the value for .Values.authentication.ca.externalSecretName should be set" }}
-{{- end }}
-{{- end }}
-
-{{- if .Values.authentication.ssl.enabled }}
-{{- if and .Values.authentication.ssl.useExternal (not .Values.authentication.ssl.externalSecretName) }}
-{{- fail "When using external ssl secret the value for .Values.authentication.ssl.externalSecretName should be set" }}
-{{- end }}
-{{- end }}
-
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: {{ $releaseName }}-{{ $chartName }}
-  annotations:
-    collectord.io/index: {{ quote .Values.splunkIndex }}
-  labels:
-    app: {{ $chartName }}
-    component: {{ $chartName }}
-    environment: {{ include "mapproxy.environment" . }}
-    release: {{ $releaseName }}
-    {{- include "mapproxy.labels" . | nindent 4 }}
-spec:
+{{- define "mapproxy-chart.mapproxy-bundle" }}
   replicas: {{ .Values.mapproxy.replicaCount }}
   selector:
     matchLabels:
@@ -51,7 +16,7 @@ spec:
       {{- if .Values.resetOnConfigChange }}
       annotations:
         checksum/configmap: {{
-         include (print $.Template.BasePath "/mapproxy-configmap.yaml") . | sha256sum }}
+          include (print $.Template.BasePath "/mapproxy-configmap.yaml") . | sha256sum }}
       {{- end }}
     spec:
     {{- if $cloudProviderImagePullSecretName }}
@@ -112,4 +77,4 @@ spec:
           persistentVolumeClaim:
             claimName: {{ .Values.rasterCommon.storage.fs.internalPvc.name }}
         {{- end }}
-{{- end -}}
+{{- end }}
