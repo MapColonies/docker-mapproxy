@@ -30,9 +30,9 @@
           envFrom:
             - configMapRef:
                 name: {{ .releaseName }}-{{ .chartName }}-map-proxy-configmap
-          {{- if .Values.mapproxy.resources.enabled }}
+          {{- if .resources.enabled }}
           resources:
-            {{- toYaml .Values.mapproxy.resources.value | nindent 12 }}
+            {{- toYaml .resources.value | nindent 12 }}
           {{- end }}
           volumeMounts:
           - mountPath: /mapproxy/mapproxy.yaml

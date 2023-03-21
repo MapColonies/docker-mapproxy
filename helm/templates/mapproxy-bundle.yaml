@@ -1,17 +1,23 @@
 {{- define "mapproxy-chart.mapproxy-bundle" }}
+  {{- $cloudProviderDockerRegistryUrl := include "mapproxy.cloudProviderDockerRegistryUrl" . -}}
+  {{- $cloudProviderImagePullSecretName := include "mapproxy.cloudProviderImagePullSecretName" . -}}
+  {{- $caSecretName := ternary .Values.authentication.ca.externalSecretName (printf "%s%s" .Release.Name "-root-ca") .Values.authentication.ca.useExternal }}
+  {{- $sslSecretName := ternary .Values.authentication.ssl.externalSecretName (printf "%s%s" .Release.Name "-open-ssl") .Values.authentication.ssl.useExternal }}
+  {{- $postgresSecretName := ternary .Values.rasterCommon.db.secrets.externalSecretName (printf "%s%s" .Release.Name "-postgres-secret") .Values.rasterCommon.db.secrets.useExternal }}
+  {{- $s3SecretName := ternary .Values.rasterCommon.storage.s3.secretName (printf "%s%s" .Release.Name  "-s3-secret") (ne .Values.rasterCommon.storage.s3.secretName "") }}
   replicas: {{ .Values.mapproxy.replicaCount }}
   selector:
     matchLabels:
-      app: {{ $chartName }}
-      release: {{ $releaseName }}
-      run: {{ $releaseName }}-{{ $chartName }}
+      app: {{ .chartName }}-{{ .type }}
+      release: {{ .releaseName }}-{{ .type }}
+      run: {{ .releaseName }}-{{ .chartName }}-{{ .type }}
       {{- include "mapproxy.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app: {{ $chartName }}
-        release: {{ $releaseName }}
-        run: {{ $releaseName }}-{{ $chartName }}
+        app: {{ .chartName }}-{{ .type }}
+        release: {{ .releaseName }}-{{ .type }}
+        run: {{ .releaseName }}-{{ .chartName }}-{{ .type }}
         {{- include "mapproxy.selectorLabels" . | nindent 8 }}
       {{- if .Values.resetOnConfigChange }}
       annotations:
@@ -25,12 +31,12 @@
     {{- end }}
       initContainers:
         ######################################################### Init Container Deployment #########################################################
-        {{- template "mapproxy-chart.init-container" (merge (dict "releaseName" $releaseName "chartName" $chartName "cloudProviderDockerRegistryUrl" $cloudProviderDockerRegistryUrl "s3SecretName" $s3SecretName "postgresSecretName" $postgresSecretName) .)}}
+        {{- template "mapproxy-chart.init-container" (merge (dict "releaseName" .releaseName "chartName" .chartName "cloudProviderDockerRegistryUrl" $cloudProviderDockerRegistryUrl "s3SecretName" $s3SecretName "postgresSecretName" $postgresSecretName) .)}}
       containers:
         ######################################################### MapProxy Deployment #########################################################
-        {{- template "mapproxy-chart.mapproxy-container" (merge (dict "releaseName" $releaseName "chartName" $chartName "cloudProviderDockerRegistryUrl" $cloudProviderDockerRegistryUrl "s3SecretName" $s3SecretName) .) }}
+        {{- template "mapproxy-chart.mapproxy-container" (merge (dict "releaseName" .releaseName "chartName" .chartName "cloudProviderDockerRegistryUrl" $cloudProviderDockerRegistryUrl "s3SecretName" $s3SecretName "resources" .resources) .) }}
         ######################################################### Mapproxinator Deployment #########################################################
-        {{- template "mapproxy-chart.mapproxinator-container" (merge (dict "releaseName" $releaseName "chartName" $chartName "cloudProviderDockerRegistryUrl" $cloudProviderDockerRegistryUrl "s3SecretName" $s3SecretName) .) }}
+        {{- template "mapproxy-chart.mapproxinator-container" (merge (dict "releaseName" .releaseName "chartName" .chartName "cloudProviderDockerRegistryUrl" $cloudProviderDockerRegistryUrl "s3SecretName" $s3SecretName) .) }}
       volumes:
         - name: mapproxy-config
           emptyDir: {}
@@ -66,7 +72,7 @@
         {{- end }}
         - name: uwsgi-config
           configMap:
-            name: {{ .Release.Name }}-{{ $chartName }}-init-configmap
+            name: {{ .Release.Name }}-{{ .chartName }}-init-configmap
             items:
             - key: "UWSGI_INI"
               path: "uwsgi.ini"

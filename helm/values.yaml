@@ -110,6 +110,30 @@ env:
 
 mapproxy:
   enabled: true
+  wms:
+    enabled: true
+    replicaCount: 1
+    resources:
+      enabled: true
+      value:
+        limits:
+          cpu: 200m
+          memory: 128Mi
+        requests:
+          cpu: 200m
+          memory: 128Mi
+  wmts:
+    enabled: true
+    replicaCount: 1
+    resources:
+      enabled: true
+      value:
+        limits:
+          cpu: 100m
+          memory: 128Mi
+        requests:
+          cpu: 100m
+          memory: 128Mi
   replicaCount: 1
   image:
     repository: mapproxy
@@ -167,15 +191,6 @@ mapproxy:
     tls: 
       enabled: true
       useExternal: ''
-  resources:
-    enabled: true
-    value:
-      limits:
-        cpu: 100m
-        memory: 128Mi
-      requests:
-        cpu: 100m
-        memory: 128Mi
 
 initContainer:
   image:
