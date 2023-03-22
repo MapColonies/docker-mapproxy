@@ -1,13 +1,13 @@
+{{- define "mapproxy-chart.mapproxy-service" }}
 {{- $releaseName := .Release.Name -}}
 {{- $chartName := include "mapproxy.name" . -}}
 {{- $cloudProviderFlavor := include "mapproxy.cloudProviderFlavor" . -}}
-{{- if .Values.mapproxy.enabled -}}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ $releaseName }}-{{ $chartName }}
+  name: {{ $releaseName }}-{{ $chartName }}-{{ .type }}
   labels:
-    app: {{ $chartName }}
+    app: {{ $chartName }}-{{ .type }}
     component: {{ $chartName }}
     environment: {{ include "mapproxy.environment" . }}
     release: {{ $releaseName }}
@@ -25,8 +25,9 @@ spec:
       nodePort: {{ .Values.mapproxy.nodePort }}
       {{- end }}
   selector:
-    app: {{ $chartName }}
-    release: {{ $releaseName }}
-    run: {{ $releaseName }}-{{ $chartName }}
-    {{- include "mapproxy.selectorLabels" . | nindent 4 }}
+    app: {{ $chartName }}-{{ .type }}
+    release: {{ $releaseName }}-{{ .type }}
+    run: {{ $releaseName }}-{{ $chartName }}-{{ .type }}
+    app.kubernetes.io/name: {{ include "mapproxy.name" . }}-{{ .type }}
+    app.kubernetes.io/instance: {{ $releaseName }}-{{ .type }}
 {{- end }}

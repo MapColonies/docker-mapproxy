@@ -11,14 +11,16 @@
       app: {{ .chartName }}-{{ .type }}
       release: {{ .releaseName }}-{{ .type }}
       run: {{ .releaseName }}-{{ .chartName }}-{{ .type }}
-      {{- include "mapproxy.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/name: {{ include "mapproxy.name" . }}-{{ .type }}
+      app.kubernetes.io/instance: {{ .releaseName }}-{{ .type }}
   template:
     metadata:
       labels:
         app: {{ .chartName }}-{{ .type }}
         release: {{ .releaseName }}-{{ .type }}
         run: {{ .releaseName }}-{{ .chartName }}-{{ .type }}
-        {{- include "mapproxy.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/name: {{ include "mapproxy.name" . }}-{{ .type }}
+        app.kubernetes.io/instance: {{ .releaseName }}-{{ .type }}
       {{- if .Values.resetOnConfigChange }}
       annotations:
         checksum/configmap: {{

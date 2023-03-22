@@ -31,7 +31,6 @@ Common labels
 */}}
 {{- define "mapproxy.labels" -}}
 helm.sh/chart: {{ include "mapproxy.chart" . }}
-{{ include "mapproxy.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -43,14 +42,6 @@ Returns the tag of the chart.
 */}}
 {{- define "mapproxy.tag" -}}
 {{- default (printf "v%s" .Chart.AppVersion) .Values.mapproxy.image.tag }}
-{{- end }}
-
-{{/*
-Selector labels
-*/}}
-{{- define "mapproxy.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "mapproxy.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
