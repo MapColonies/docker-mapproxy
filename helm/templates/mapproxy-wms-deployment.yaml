@@ -2,6 +2,7 @@
 
 {{- $releaseName := .Release.Name -}}
 {{- $chartName := include "mapproxy.name" . -}}
+{{- $type := "wms"}}
 
 {{- if .Values.authentication.ca.enabled }}
 {{- if and .Values.authentication.ca.useExternal (not .Values.authentication.ca.externalSecretName) }}
@@ -18,7 +19,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ $releaseName }}-{{ $chartName }}
+  name: {{ $releaseName }}-{{ $chartName }}-{{ $type }}
   annotations:
     collectord.io/index: {{ quote .Values.splunkIndex }}
   labels:
@@ -28,5 +29,5 @@ metadata:
     release: {{ $releaseName }}
     {{- include "mapproxy.labels" . | nindent 4 }}
 spec:
-  {{- template "mapproxy-chart.mapproxy-bundle" (merge (dict "releaseName" $releaseName "chartName" $chartName "type" "wms" "resources" .Values.mapproxy.wms.resources) .)}}
+  {{- template "mapproxy-chart.mapproxy-bundle" (merge (dict "releaseName" $releaseName "chartName" $chartName "type" $type "resources" .Values.mapproxy.wms.resources) .)}}
 {{- end -}}
