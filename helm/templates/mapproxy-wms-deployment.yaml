@@ -3,6 +3,7 @@
 {{- $releaseName := .Release.Name -}}
 {{- $chartName := include "mapproxy.name" . -}}
 {{- $type := "wms"}}
+{{- $replicaCount := .Values.mapproxy.wms.replicaCount }}
 
 {{- if .Values.authentication.ca.enabled }}
 {{- if and .Values.authentication.ca.useExternal (not .Values.authentication.ca.externalSecretName) }}
@@ -29,5 +30,5 @@ metadata:
     release: {{ $releaseName }}
     {{- include "mapproxy.labels" . | nindent 4 }}
 spec:
-  {{- template "mapproxy-chart.mapproxy-bundle" (merge (dict "releaseName" $releaseName "chartName" $chartName "type" $type "resources" .Values.mapproxy.wms.resources) .)}}
+  {{- template "mapproxy-chart.mapproxy-bundle" (merge (dict "releaseName" $releaseName "chartName" $chartName "type" $type "replicaCount" $replicaCount "resources" .Values.mapproxy.wms.resources) .)}}
 {{- end -}}

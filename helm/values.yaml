@@ -134,7 +134,6 @@ mapproxy:
         requests:
           cpu: 100m
           memory: 128Mi
-  replicaCount: 1
   image:
     repository: mapproxy
     tag: 'latest'
