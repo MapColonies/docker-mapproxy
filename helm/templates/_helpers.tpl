@@ -31,11 +31,6 @@ Create service name as used by the service name label.
 */}}
 {{- define "service.fullname" -}}
 {{- printf "%s-%s" .Release.Name "service" }}
-{{- end }}{{/*
-Create service name as used by the service name label.
-*/}}
-{{- define "service.fullname" -}}
-{{- printf "%s-%s" .Release.Name "service" }}
 {{- end }}
 
 {{/*
