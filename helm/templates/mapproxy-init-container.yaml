@@ -41,7 +41,7 @@
             {{- end }}
           envFrom:
             - configMapRef:
-                name: {{ .releaseName }}-{{ .chartName }}-init-configmap  
+                name: {{ .releaseName }}-init-configmap
           volumeMounts:
             - mountPath: /app/downloads
               name: mapproxy-config

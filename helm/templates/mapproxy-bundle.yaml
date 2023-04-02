@@ -74,7 +74,7 @@
         {{- end }}
         - name: uwsgi-config
           configMap:
-            name: {{ .Release.Name }}-{{ .chartName }}-init-configmap
+            name: {{ .releaseName }}-init-configmap
             items:
             - key: "UWSGI_INI"
               path: "uwsgi.ini"

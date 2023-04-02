@@ -27,7 +27,7 @@
             {{- end }}
           envFrom:
             - configMapRef:
-                name: {{ .releaseName }}-{{ .chartName }}-map-proxy-configmap
+                name: {{ .releaseName }}-configmap
           {{- if .resources.enabled }}
           resources:
             {{- toYaml .resources.value | nindent 12 }}

@@ -20,7 +20,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ $releaseName }}-{{ $chartName }}-{{ $type }}
+  name: {{ $releaseName }}-{{ $type }}-deployment
   annotations:
     collectord.io/index: {{ quote .Values.splunkIndex }}
   labels:

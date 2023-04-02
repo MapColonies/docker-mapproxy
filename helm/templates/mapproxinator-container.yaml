@@ -49,7 +49,7 @@
             {{- end }}
           envFrom:
             - configMapRef:
-                name: {{ .releaseName }}-{{ .chartName }}-mapproxinator-configmap
+                name: {{ .releaseName }}-mapproxinator-configmap
           volumeMounts:
             - mountPath: /mapproxy/mapproxy.yaml
               name: mapproxy-config
