@@ -1,8 +1,6 @@
 {{- define "mapproxy-chart.init-container" }}
         - name: init-mapproxy
-          {{- with .Values.initContainer.image }}
-          image: {{ .cloudProviderDockerRegistryUrl }}{{ .repository }}:{{ .tag }}
-          {{- end }}
+          image: {{ .cloudProviderDockerRegistryUrl }}{{ .Values.initContainer.image.repository }}:{{ .Values.initContainer.image.tag }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           env:
             - name: INIT_MODE

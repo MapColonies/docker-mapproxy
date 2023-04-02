@@ -1,8 +1,6 @@
 {{- define "mapproxy-chart.mapproxinator-container" }}
         - name: mapproxinator
-          {{- with .Values.mapproxinator.image }}
-          image: {{ .cloudProviderDockerRegistryUrl }}{{ .repository }}:{{ .tag }}
-          {{- end }}
+          image: {{ .cloudProviderDockerRegistryUrl }}{{ .Values.mapproxinator.image.repository }}:{{ .Values.mapproxinator.image.tag }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           env:
             {{- if .Values.rasterCommon.ca.secretName }}
