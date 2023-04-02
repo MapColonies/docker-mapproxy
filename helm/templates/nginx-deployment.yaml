@@ -64,6 +64,18 @@ spec:
             items:
             - key: "NGINX_ROOT_CONFIG"
               path: "nginx.conf"
+        - name: nginx-mapproxy-config
+          configMap:
+            name: {{ .Release.Name }}-{{ $chartName }}-nginx-configmap
+            items:
+            - key: "NGINX_MAPPROXY_CONFIG"
+              path: "nginx.mapproxy.conf"
+        - name: nginx-mapproxy-wmts-config
+          configMap:
+            name: {{ .Release.Name }}-{{ $chartName }}-nginx-configmap
+            items:
+            - key: "NGINX_MAPPROXY_WMTS_CONFIG"
+              path: "nginx.mapproxy.wmts.conf"
         {{- if .Values.rasterCommon.storage.fs.internalPvc.enabled }}
         - name: sources-storage
           persistentVolumeClaim:
@@ -85,6 +97,14 @@ spec:
           volumeMounts:
           - mountPath: "/etc/nginx/conf.d"
             name: nginx-config
+            readOnly: true
+          - mountPath: "/etc/nginx/nginx.mapproxy.conf"
+            subPath: nginx.mapproxy.conf
+            name: nginx-mapproxy-config
+            readOnly: true
+          - mountPath: "/etc/nginx/nginx.mapproxy.wmts.conf"
+            subPath: nginx.mapproxy.wmts.conf
+            name: nginx-mapproxy-wmts-config
             readOnly: true
           - mountPath: "/etc/nginx/nginx.conf"
             name: nginx-root-config
