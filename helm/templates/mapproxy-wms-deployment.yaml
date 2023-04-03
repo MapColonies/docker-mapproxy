@@ -23,6 +23,7 @@ metadata:
   name: {{ $releaseName }}-{{ $type }}-deployment
   annotations:
     collectord.io/index: {{ quote .Values.splunkIndex }}
+    collectord.io/output: splunk
   labels:
     app: {{ $chartName }}
     component: {{ $chartName }}
