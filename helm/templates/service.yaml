@@ -23,7 +23,7 @@ spec:
       protocol: TCP
       name: http
       {{- if eq $cloudProviderFlavor "minikube" }}
-      nodePort: {{ .Values.mapproxy.nodePort }}
+      nodePort: {{ .nodePort }}
       {{- end }}
   selector:
     app: {{ $chartName }}-{{ .type }}

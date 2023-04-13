@@ -122,6 +122,7 @@ mapproxy:
         requests:
           cpu: 200m
           memory: 128Mi
+    nodePort: 30001
   wmts:
     enabled: true
     replicaCount: 1
@@ -134,6 +135,7 @@ mapproxy:
         requests:
           cpu: 100m
           memory: 128Mi
+    nodePort: 30002
   image:
     repository: mapproxy
     tag: 'latest'
@@ -142,7 +144,6 @@ mapproxy:
     schema: MapproxyConfig
   port: 80
   targetPort: 8080
-  nodePort: 30000
   uwsgi:
     socket: 3031
     httpSocket: 8080
@@ -236,7 +237,7 @@ nginx:
   port: 8080
   internalServicePort: 80
   targetPort: 8080
-  nodePort: 30001
+  nodePort: 30003
   resources:
     enabled: true
     value:
