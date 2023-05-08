@@ -58,7 +58,7 @@ spec:
             name: {{ $releaseName }}-nginx-configmap
             items:
             - key: "JWT_JS"
-              path: "jwt.ts"
+              path: "jwt.js"
         - name: nginx-config
           configMap:
             name: {{ $releaseName }}-nginx-configmap
