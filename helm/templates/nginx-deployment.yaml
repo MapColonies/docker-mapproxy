@@ -107,7 +107,7 @@ spec:
             readOnly: true
           - mountPath: "/etc/nginx/jwt.js"
             name: jwt-js
-            subPath: jwt-fs
+            subPath: "/etc/nginx/jwt.js"
             readOnly: true
           - mountPath: "/etc/nginx/nginx.mapproxy.conf"
             subPath: nginx.mapproxy.conf
