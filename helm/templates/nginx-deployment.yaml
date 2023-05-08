@@ -103,10 +103,10 @@ spec:
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           volumeMounts:
           - mountPath: "/etc/nginx/conf.d"
-            name: jwt-js
+            name: nginx-config
             readOnly: true
           - mountPath: "/etc/nginx/jwt.js"
-            name: nginx-config
+            name: jwt-js
             readOnly: true
           - mountPath: "/etc/nginx/nginx.mapproxy.conf"
             subPath: nginx.mapproxy.conf
