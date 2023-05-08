@@ -1,5 +1,4 @@
 function jwt(data) {
-    return(200, data, "Hello world!\n");
     var parts = data.split('.').slice(0,2)
         .map(v=>Buffer.from(v, 'base64url').toString())
         .map(JSON.parse);
@@ -7,7 +6,14 @@ function jwt(data) {
 }
 
 function jwt_payload_sub(r) {
-    return jwt(r);
+    try {
+        if(r.args["token"]) {
+          return jwt(r.args["token"]).payload.sub;
+        };
+        return "";
+    } catch (error) {
+        return ""
+    }
 }
 
 
