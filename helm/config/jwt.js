@@ -10,6 +10,9 @@ function jwt_payload_sub(r) {
         if(r.args["token"]) {
           return jwt(r.args["token"]).payload.sub;
         };
+        if(r.headersIn["x-api-key"]) {
+          return jwt(r.headersIn["x-api-key"]).payload.sub;
+        }
         return "";
     } catch (error) {
         return ""
