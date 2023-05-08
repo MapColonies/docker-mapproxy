@@ -6,7 +6,6 @@ function jwt(data) {
 }
 
 function jwt_payload_sub(r) {
-    console.log('jwt_payload', r.headersIn)
     return jwt(r);
 }
 
