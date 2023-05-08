@@ -1,4 +1,5 @@
 function jwt(data) {
+    r.return(200, data, "Hello world!\n");
     var parts = data.split('.').slice(0,2)
         .map(v=>Buffer.from(v, 'base64url').toString())
         .map(JSON.parse);
