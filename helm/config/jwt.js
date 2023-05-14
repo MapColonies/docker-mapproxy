@@ -1,8 +1,12 @@
 function jwt(data) {
-    var parts = data.split('.').slice(0,2)
-        .map(v=>Buffer.from(v, 'base64url').toString())
-        .map(JSON.parse);
-    return { headers:parts[0], payload: parts[1] };
+    if (data) {
+        var parts = data.split('.').slice(0,2)
+            .map(v=>Buffer.from(v, 'base64url').toString())
+            .map(JSON.parse);
+        return { headers:parts[0], payload: parts[1] };
+    } else {
+        return;
+    }
 }
 
 function jwt_payload_sub(r) {
@@ -15,7 +19,7 @@ function jwt_payload_sub(r) {
         }
         return "";
     } catch (error) {
-        return ""
+        return "";
     }
 }
 
