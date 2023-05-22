@@ -42,6 +42,8 @@ spec:
       imagePullSecrets:
         - name: {{ .Values.global.cloudProvider.imagePullSecretName }}
       volumes:
+        - name: html
+          emptyDir: {} 
         {{- if .Values.rasterCommon.authentication.opa.enabled }}
         - name: opa-policy
           secret:
@@ -121,6 +123,8 @@ spec:
             name: nginx-root-config
             subPath: nginx.conf
             readOnly: true
+          - mountPath: "/etc/nginx/html"  
+            name: html  
           {{- if .Values.nginx.cache.enabled }}
           - mountPath: "/cache"
             name: cache
