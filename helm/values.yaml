@@ -111,7 +111,7 @@ env:
 mapproxy:
   enabled: true
   socket:
-    connectionTimeout: 0.2
+    connectionTimeout: 0.05
     timeout: 2
   wms:
     enabled: true
