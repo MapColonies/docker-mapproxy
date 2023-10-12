@@ -110,6 +110,9 @@ env:
 
 mapproxy:
   enabled: true
+  socket:
+    connectionTimeout: 0.2
+    timeout: 2
   wms:
     enabled: true
     replicaCount: 1
