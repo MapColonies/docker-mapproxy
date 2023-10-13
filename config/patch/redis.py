@@ -44,9 +44,9 @@ class RedisCache(TileCacheBase):
         self.lock_cache_id = 'redis-' + hashlib.md5((host + str(port) + prefix + str(db)).encode('utf-8')).hexdigest()
         self.ttl = ttl
         # Set a operation timeout nonnegative, floating point number expressing *seconds*.
-        self.socket_timeout = float(os.environ.get('SOCKET_TIMEOUT', 0.1))
+        self.socket_timeout = float(os.environ.get('SOCKET_TIMEOUT_SECONDS', 0.1))
         # Set a connection timeout, nonnegative floating point number expressing *seconds*.
-        self.socket_connection_timeout =  float(os.environ.get('SOCKET_CONNECTION_TIMEOUT', 0.1))
+        self.socket_connection_timeout =  float(os.environ.get('SOCKET_CONNECTION_TIMEOUT_SECONDS', 0.1))
         self.r = redis.StrictRedis(host=host, port=port, db=db, socket_timeout=self.socket_timeout, socket_connect_timeout=self.socket_connection_timeout)
 
     def _key(self, tile):
