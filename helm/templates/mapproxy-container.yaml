@@ -64,10 +64,4 @@
             - name: uwsgi
               containerPort: {{ .Values.mapproxy.uwsgi.socket }}
               protocol: TCP
-          readinessProbe:
-            httpGet:
-              path: /service?REQUEST=GetCapabilities&SERVICE=WMTS
-              port: {{ .Values.mapproxy.targetPort }}
-            initialDelaySeconds: 30
-            timeoutSeconds: 5
 {{- end }}
