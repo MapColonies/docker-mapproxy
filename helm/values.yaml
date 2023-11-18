@@ -22,6 +22,9 @@ authentication:
     enabled: false
     useExternal: false
     externalSecretName: ""
+  redis:
+    enabled: true
+    secretName: redis-auth
   
 opa:
   image: openpolicyagent/opa

@@ -9,7 +9,7 @@ global:
   metrics:
     enabled: false
     url: http://localhost:55681/v1/metrics
-  environment: raster-dev
+  environment: 2023-q3-1
   authentication:
     jwtPublicKeySecretName: map-colonies-jwks
 
@@ -22,6 +22,9 @@ authentication:
     enabled: false
     useExternal: false
     externalSecretName: ""
+  redis:
+    enabled: false
+    secretName: auth-redis
   
 opa:
   image: openpolicyagent/opa
@@ -64,15 +67,15 @@ rasterCommon:
       customHeaderName: ""
   db:
     host: '10.0.4.4'
-    name: "raster-dev"
+    name: "raster-int-q3-1-2023"
     port: 5432
     sslEnabled: false
     rejectUnauthorized: false
     secrets:
       useExternal: true
-      externalSecretName: 'raster-dev-postgres-secret'
+      externalSecretName: 'libot-int-q3-1-2023-postgres-secret'
   storage:
-    tilesStorageProvider: 'FS'
+    tilesStorageProvider: 'S3'
     mapproxyConfigProvider: db
     fs:
       internalPvc:
@@ -83,12 +86,12 @@ rasterCommon:
     s3:
       enabled: true
       endpointUrl: '10.8.0.9:9000'
-      tilesBucket: 'raster-dev'
+      tilesBucket: 'libot-int-q3-1-2023'
       forcePathStyle: true
       sslEnabled: false
       virtualHosting: false
       awsHttps: false
-      secretName: 'raster-dev-s3-secret'
+      secretName: 's3-secret'
 
 environment: development
 initialDelaySeconds: 60
@@ -138,11 +141,11 @@ mapproxy:
           memory: 2000Mi
     nodePort: 30002
   image:
-    repository: mapproxy
-    tag: 1.16.0-test
+    repository: docker-mapproxy
+    tag: redis-auth
   db:
     nameOverride:
-    schema: MapproxyConfigTest
+    schema: MapproxyConfig
   port: 80
   targetPort: 8080
   uwsgi:
@@ -197,7 +200,7 @@ mapproxy:
 initContainer:
   image:
     repository: mapproxinator
-    tag: 'v1.0.9'
+    tag: 'v1.0.10'
   env:
     logLevel: info
     ssl:
@@ -218,7 +221,7 @@ initContainer:
         memory: 128Mi
 
 nginx:
-  enabled: false
+  enabled: true
   volume:
     storage: 1000Mi
     accessModes: ReadWriteOnce
@@ -235,13 +238,13 @@ nginx:
   replicaCount: 1
   image:
     repository: nginx
-    tag: 'latest' 
+    tag: 'merge' 
   port: 8080
   internalServicePort: 80
   targetPort: 8080
   nodePort: 30003
   resources:
-    enabled: true
+    enabled: false
     value:
       limits:
         cpu: 100m
@@ -255,7 +258,7 @@ mapproxinator:
   replicaCount: 1
   image:
     repository: mapproxinator
-    tag: 'v1.0.9'
+    tag: 'v1.0.10'
   port: 80
   targetPort: 8081
   nodePort: 30002

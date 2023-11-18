@@ -13,6 +13,18 @@
             - name: NODE_EXTRA_CA_CERTS
               value: {{ printf "%s/%s" .Values.rasterCommon.ca.path .Values.rasterCommon.ca.key | quote }}
             {{- end }}
+            {{- if .Values.authentication.redis.enabled }}
+            - name: REDIS_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.authentication.redis.secretName }}
+                  key: redis-username
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.authentication.redis.secretName }}
+                  key: redis-password
+            {{- end }}
             {{- if eq (upper .Values.rasterCommon.storage.tilesStorageProvider) "S3" }}
             - name: AWS_ACCESS_KEY_ID
               valueFrom:
