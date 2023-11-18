@@ -38,7 +38,7 @@ log = logging.getLogger(__name__)
 
 
 class RedisCache(TileCacheBase):
-    def __init__(self, host, port, prefix, ttl=0, db=0):
+    def __init__(self, host, port, prefix, ttl=0, db=0, username=None, password=None):
         if redis is None:
             raise ImportError("Redis backend requires 'redis' package.")
 
@@ -49,9 +49,7 @@ class RedisCache(TileCacheBase):
         self.socket_timeout = float(os.environ.get('SOCKET_TIMEOUT_SECONDS', 0.1))
         # Set a connection timeout, nonnegative floating point number expressing *seconds*.
         self.socket_connection_timeout =  float(os.environ.get('SOCKET_CONNECTION_TIMEOUT_SECONDS', 0.1))
-        self.username = os.environ.get('REDIS_USERNAME', None)
-        self.password = os.environ.get('REDIS_PASSWORD', None)
-        self.r = redis.StrictRedis(host=host, port=port, db=db, username=self.username, password=self.password, socket_timeout=self.socket_timeout, socket_connect_timeout=self.socket_connection_timeout)
+        self.r = redis.StrictRedis(host=host, port=port, db=db, username=username, password=password, socket_timeout=self.socket_timeout, socket_connect_timeout=self.socket_connection_timeout)
 
     def _key(self, tile):
         x, y, z = tile.coord
