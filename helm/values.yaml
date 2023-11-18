@@ -24,6 +24,7 @@ authentication:
     externalSecretName: ""
   redis:
     enabled: true
+    withUsername: false
     secretName: redis-auth
   
 opa:
