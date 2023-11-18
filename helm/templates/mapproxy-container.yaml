@@ -14,11 +14,13 @@
               value: {{ printf "%s/%s" .Values.rasterCommon.ca.path .Values.rasterCommon.ca.key | quote }}
             {{- end }}
             {{- if .Values.authentication.redis.enabled }}
+            {{- if .Values.authentication.redis.withUsername }}
             - name: REDIS_USERNAME
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.authentication.redis.secretName }}
                   key: redis-username
+            {{- end }}
             - name: REDIS_PASSWORD
               valueFrom:
                 secretKeyRef:
