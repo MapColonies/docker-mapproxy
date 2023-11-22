@@ -1,7 +1,7 @@
 global:
   cloudProvider:
-    dockerRegistryUrl: my-registry-url.io
-    imagePullSecretName: "my-registry-secret"
+    dockerRegistryUrl: acrarolibotnonprod.azurecr.io
+    imagePullSecretName: "acr-registry"
     flavor: openshift
   tracing:
     enabled: false
@@ -17,11 +17,11 @@ authentication:
   ca:
     enabled: false
     useExternal: false
-    externalSecretName: ""
+    externalSecretName: "raster-dev-postgres-secret"
   ssl:
     enabled: false
     useExternal: false
-    externalSecretName: ""
+    externalSecretName: "raster-dev-postgres-secret"
 
 opa:
   image: openpolicyagent/opa
@@ -63,25 +63,25 @@ rasterCommon:
       enabled: false
       customHeaderName: ""
   db:
-    host: "localhost"
-    name: "raster"
+    host: "10.0.4.4"
+    name: "raster-dev"
     port: 5432
     sslEnabled: false
     rejectUnauthorized: false
     secrets:
-      useExternal: false
-      externalSecretName: ""
+      useExternal: true
+      externalSecretName: "raster-dev-postgres-secret"
   storage:
     tilesStorageProvider: "FS"
     mapproxyConfigProvider: db
     fs:
       internalPvc:
         enabled: true
-        name: internal-pvc
+        name: internal-pvc-nfs
         tilesSubPath: tiles
     s3:
       enabled: false
-      endpointUrl: "http://localhost:9000"
+      endpointUrl: "http://10.8.1.13:9000"
       tilesBucket: "raster"
       forcePathStyle: true
       sslEnabled: false
@@ -140,10 +140,10 @@ mapproxy:
           memory: 128Mi
     nodePort: 30002
   image:
-    repository: mapproxy
-    tag: "latest"
+    repository: docker-mapproxy
+    tag: "v1.4.2"
   db:
-    nameOverride:
+    # nameOverride:
     schema: MapproxyConfig
   port: 80
   targetPort: 8080
@@ -153,6 +153,10 @@ mapproxy:
     processes: 6
     threads: 10
     disableLogging: true
+    statsServer:
+      enabled: true
+      stats: 1717
+      statsMinify: true
   env:
     cors:
       enabled: true
@@ -199,7 +203,7 @@ mapproxy:
 initContainer:
   image:
     repository: mapproxinator
-    tag: "latest"
+    tag: "v1.0.10"
   env:
     logLevel: warn
     ssl:
@@ -237,7 +241,7 @@ nginx:
   replicaCount: 1
   image:
     repository: nginx
-    tag: "latest"
+    tag: "merge"
   port: 8080
   internalServicePort: 80
   targetPort: 8080
@@ -257,7 +261,7 @@ mapproxinator:
   replicaCount: 1
   image:
     repository: mapproxinator
-    tag: "latest"
+    tag: "v1.0.10"
   port: 80
   targetPort: 8081
   nodePort: 30002
