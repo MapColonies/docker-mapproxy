@@ -327,8 +327,8 @@ uwsgiExporter:
     enabled: true
     value:
       limits:
-        cpu: 330m
+        cpu: 100m
         memory: 128Mi
       requests:
-        cpu: 330m
+        cpu: 100m
         memory: 128Mi
