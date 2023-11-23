@@ -1,7 +1,7 @@
 global:
   cloudProvider:
-    dockerRegistryUrl: acrarolibotnonprod.azurecr.io
-    imagePullSecretName: "acr-registry"
+    dockerRegistryUrl: my-registry-url.io
+    imagePullSecretName: "my-registry-secret"
     flavor: openshift
   tracing:
     enabled: false
@@ -17,11 +17,11 @@ authentication:
   ca:
     enabled: false
     useExternal: false
-    externalSecretName: "raster-dev-postgres-secret"
+    externalSecretName: ""
   ssl:
     enabled: false
     useExternal: false
-    externalSecretName: "raster-dev-postgres-secret"
+    externalSecretName: ""
 
 opa:
   image: openpolicyagent/opa
@@ -63,25 +63,25 @@ rasterCommon:
       enabled: false
       customHeaderName: ""
   db:
-    host: "10.0.4.4"
-    name: "raster-dev"
+    host: "localhost"
+    name: "raster"
     port: 5432
     sslEnabled: false
     rejectUnauthorized: false
     secrets:
-      useExternal: true
-      externalSecretName: "raster-dev-postgres-secret"
+      useExternal: false
+      externalSecretName: ""
   storage:
     tilesStorageProvider: "FS"
     mapproxyConfigProvider: db
     fs:
       internalPvc:
         enabled: true
-        name: internal-pvc-nfs
+        name: internal-pvc
         tilesSubPath: tiles
     s3:
       enabled: false
-      endpointUrl: "http://10.8.1.13:9000"
+      endpointUrl: "http://localhost:9000"
       tilesBucket: "raster"
       forcePathStyle: true
       sslEnabled: false
@@ -105,7 +105,7 @@ env:
     enabled: false
     url: http://localhost:55681/v1/trace
   metrics:
-    enabled: true
+    enabled: false
     url: http://localhost:55681/v1/metrics
 
 mapproxy:
@@ -133,15 +133,15 @@ mapproxy:
       enabled: true
       value:
         limits:
-          cpu: 2500m
-          memory: 3200Mi
+          cpu: 100m
+          memory: 128Mi
         requests:
-          cpu: 2500m
-          memory: 3200Mi
+          cpu: 100m
+          memory: 128Mi
     nodePort: 30002
   image:
     repository: docker-mapproxy
-    tag: "v1.4.2"
+    tag: "latest"
   db:
     nameOverride:
     schema: MapproxyConfig
@@ -225,7 +225,7 @@ mapproxy:
 initContainer:
   image:
     repository: mapproxinator
-    tag: "v1.0.10"
+    tag: "latest"
   env:
     logLevel: warn
     ssl:
@@ -239,8 +239,8 @@ initContainer:
     enabled: true
     value:
       limits:
-        cpu: 500m
-        memory: 500Mi
+        cpu: 100m
+        memory: 128Mi
       requests:
         cpu: 100m
         memory: 128Mi
@@ -263,7 +263,7 @@ nginx:
   replicaCount: 1
   image:
     repository: nginx
-    tag: "merge"
+    tag: "latest"
   port: 8080
   internalServicePort: 80
   targetPort: 8080
@@ -272,18 +272,18 @@ nginx:
     enabled: true
     value:
       limits:
-        cpu: 500m
-        memory: 250Mi
+        cpu: 100m
+        memory: 128Mi
       requests:
-        cpu: 500m
-        memory: 250Mi
+        cpu: 100m
+        memory: 128Mi
 
 mapproxinator:
   enabled: true
   replicaCount: 1
   image:
     repository: mapproxinator
-    tag: "v1.0.10"
+    tag: "latest"
   port: 80
   targetPort: 8081
   nodePort: 30002
@@ -319,7 +319,7 @@ uwsgiExporter:
   enabled: true
   image:
     repository: "timonwong/uwsgi-exporter"
-    tag: "v1.3.0"
+    tag: "latest"
   env:
     logLevel: info # one of [debug, info, warn, error]
   port: 9117
