@@ -314,8 +314,9 @@ mapproxinator:
       requests:
         cpu: 100m
         memory: 128Mi
+
 uwsgiExporter:
-  enabled: false
+  enabled: true
   image:
     repository: "timonwong/uwsgi-exporter"
     tag: "v1.3.0"
@@ -326,8 +327,8 @@ uwsgiExporter:
     enabled: true
     value:
       limits:
-        cpu: 100m
+        cpu: 330m
         memory: 128Mi
       requests:
-        cpu: 100m
+        cpu: 330m
         memory: 128Mi
