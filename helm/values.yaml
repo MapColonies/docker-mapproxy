@@ -133,11 +133,11 @@ mapproxy:
       enabled: true
       value:
         limits:
-          cpu: 100m
-          memory: 128Mi
+          cpu: 2500m
+          memory: 3200Mi
         requests:
-          cpu: 100m
-          memory: 128Mi
+          cpu: 2500m
+          memory: 3200Mi
     nodePort: 30002
   image:
     repository: docker-mapproxy
@@ -217,8 +217,8 @@ initContainer:
     enabled: true
     value:
       limits:
-        cpu: 100m
-        memory: 128Mi
+        cpu: 500m
+        memory: 500Mi
       requests:
         cpu: 100m
         memory: 128Mi
