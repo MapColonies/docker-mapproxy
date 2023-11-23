@@ -24,6 +24,10 @@ metadata:
   annotations:
     collectord.io/index: {{ quote .Values.splunkIndex }}
     collectord.io/output: splunk
+    {{- if .Values.env.metrics.enabled }}
+    prometheus.io/port: {{ .Values.env.metrics.prometheus.port | quote }}
+    prometheus.io/scrape: {{ .Values.env.metrics.prometheus.scrape | quote }}
+    {{- end }}
   labels:
     app: {{ $chartName }}
     component: {{ $chartName }}
