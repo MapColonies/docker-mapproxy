@@ -143,7 +143,7 @@ mapproxy:
     repository: docker-mapproxy
     tag: "v1.4.2"
   db:
-    # nameOverride:
+    nameOverride:
     schema: MapproxyConfig
   port: 80
   targetPort: 8080
