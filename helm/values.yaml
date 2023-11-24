@@ -289,7 +289,7 @@ mapproxinator:
     responseCompressionEnabled: true
     requestPayloadLimit: 1mb
   resources:
-    enabled: true
+    enabled: false
     value:
       limits:
         cpu: 500m
