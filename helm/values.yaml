@@ -299,7 +299,6 @@ mapproxinator:
         memory: 128Mi
 
 uwsgiExporter:
-  enabled: true
   image:
     repository: "timonwong/uwsgi-exporter"
     tag: "latest"
