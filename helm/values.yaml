@@ -24,36 +24,6 @@ authentication:
     useExternal: false
     externalSecretName: ""
 
-opa:
-  image: openpolicyagent/opa
-  imageTag: 0.29.4-envoy-3
-  port: 9191
-  enableLogging: false
-  resources:
-    enabled: true
-    value:
-      limits:
-        cpu: 100m
-        memory: 128Mi
-      requests:
-        cpu: 100m
-        memory: 128Mi
-envoy:
-  image: envoyproxy/envoy
-  imageTag: v1.20.7
-  port: &envoyPort 8000
-  maxRequestBytes: 8192
-  requestedDomain: raster
-  resources:
-    enabled: true
-    value:
-      limits:
-        cpu: 100m
-        memory: 128Mi
-      requests:
-        cpu: 100m
-        memory: 128Mi
-
 rasterCommon:
   ca:
     secretName: ""
@@ -61,8 +31,7 @@ rasterCommon:
     key: "ca.crt"
   authentication:
     opa:
-      enabled: false
-      customHeaderName: ""
+      customHeaderName: "x-api-key"
   db:
     host: "localhost"
     name: "raster"
@@ -165,7 +134,7 @@ mapproxy:
     authentication:
       WMS:
         enabled: true
-        requiredDomain: raster_wms
+        requiredDomain: rasterWms
       token:
         queryName: token
         headerNameOverride: #will use "rasterCommon.authentication.opa.customHeaderName" if not specified
@@ -247,47 +216,47 @@ nginx:
     inactive: 60m
     expirationTime: 60m
     useTempPath: "off"
+    envoy:
+    image: envoyproxy/envoy
+    imageTag: v1.20.7
+    port: &envoyPort 8000
+    maxRequestBytes: 8192
+    requestedDomain: raster
+    resources:
+      enabled: true
+      value:
+        limits:
+          cpu: 100m
+          memory: 128Mi
+        requests:
+          cpu: 100m
+          memory: 128Mi
+    opa:
+    image: openpolicyagent/opa
+    imageTag: 0.29.4-envoy-3
+    jwtPublicKeySecretName: map-colonies-jwks
+    secretName: docker-mapproxy-nginx-opa
+    port: 9191
+    enableLogging: false
+    resources:
+      enabled: true
+      value:
+        limits:
+          cpu: 100m
+          memory: 128Mi
+        requests:
+          cpu: 100m
+          memory: 128Mi
   port: 8080
   internalServicePort: 80
   nginxTargetPort: &nginxTargetPort 8080
-  targetPort: *envoyPort # if global.enabledOpala is true use *nginxTargetPort else use *envoyPort
+  targetPort: *nginxTargetPort  # --> if global.enabledOpala is true use *nginxTargetPort else use *envoyPort | if no authorization is needed use *nginxTargetPort
   nodePort: 30003
-  # envoy:
-  #   image: envoyproxy/envoy
-  #   imageTag: v1.20.7
-  #   port: &envoyPort 8000
-  #   maxRequestBytes: 8192
-  #   requestedDomain: raster
-  #   resources:
-  #     enabled: true
-  #     value:
-  #       limits:
-  #         cpu: 100m
-  #         memory: 128Mi
-  #       requests:
-  #         cpu: 100m
-  #         memory: 128Mi
-  # opa:
-  #   image: openpolicyagent/opa
-  #   imageTag: 0.29.4-envoy-3
-  #   jwtPublicKeySecretName: map-colonies-jwks
-  #   secretName: docker-mapproxy-nginx-opa
-  #   port: 9191
-  #   enableLogging: false
-  #   resources:
-  #     enabled: true
-  #     value:
-  #       limits:
-  #         cpu: 100m
-  #         memory: 128Mi
-  #       requests:
-  #         cpu: 100m
-  #         memory: 128Mi
 
   authorization:
     enabled: true
     url: http://opa-int-opa-service.infra-services/v1/data/http/authz/decision
-    domain: "raster"
+    domain: ""
     wmsDomain: "rasterWms"
     wmtsDomain: "raster"
 
@@ -299,13 +268,22 @@ nginx:
       emptyDir:
         sizeLimit: "{{ .Values.volume.storage }}"
         medium: "Memory"
+    - name: proxy-config
+      configMap:
+        name: "{{ .Release.Name }}-envoy"
+    - name: opa-policy
+      secret:
+        secretName: "{{ .Release.Name }}-opa"
+    - name: jwt-public-keys
+      secret:
+        secretName: "{{ .Values.global.authentication.jwtPublicKeySecretName }}"
 
   extraVolumeMounts:
     - name: nginx-config
       mountPath: "/etc/nginx/conf.d/default.conf"
       subPath: default.conf
-    - mountPath: "/etc/nginx/nginx.conf"
-      name: nginx-config
+    - name: nginx-config
+      mountPath: "/etc/nginx/nginx.conf"
       subPath: nginx.conf
     - name: nginx-config
       mountPath: "/etc/nginx/log_format.conf"
@@ -313,19 +291,11 @@ nginx:
     - name: nginx-config
       mountPath: "/etc/nginx/nginx.mapproxy.conf"
       subPath: nginx.mapproxy.conf
-    - mountPath: "/etc/nginx/nginx.mapproxy.wmts.conf"
-      name: nginx-config
+    - name: nginx-config
+      mountPath: "/etc/nginx/nginx.mapproxy.wmts.conf"
       subPath: nginx.mapproxy.wmts.conf
     - name: cache
       mountPath: "/cache"
-    - name: proxy-config
-      mountPath: /config
-    # - name: opa-policy
-    #   secret:
-    #     secretName: {{ .Values.secretName }}
-    # - name: jwt-public-keys
-    #   secret:
-    #     secretName: {{ .Values.jwtPublicKeySecretName }}
   
   sidecars: |-
     {{- if not .Values.global.enabledOpala }}
