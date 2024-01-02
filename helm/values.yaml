@@ -126,7 +126,6 @@ mapproxy:
     statsServer:
       stats: 1717
       statsMinify: true
-  authentication:
 
   env:
     cors:
@@ -229,10 +228,10 @@ nginx:
   opa:
     image: openpolicyagent/opa
     imageTag: 0.29.4-envoy-3
-    jwtPublicKeySecretName: map-colonies-jwks
-    customHeaderName: ""
-    secretName: docker-mapproxy-nginx-opa
     port: 9191
+    jwtPublicKeySecretName: map-colonies-jwks
+    customHeaderName: "x-api-key"
+    secretName: docker-mapproxy-nginx-opa
     enableLogging: false
     logLevel: warn
     resources:
@@ -247,7 +246,7 @@ nginx:
   port: 8080
   internalServicePort: 80
   nginxTargetPort: &nginxTargetPort 8080
-  targetPort: *nginxTargetPort  # --> if global.opalaEnabled is true use *nginxTargetPort else use *envoyPort | if no authorization is needed use *nginxTargetPort
+  targetPort: *envoyPort  # --> if global.opalaEnabled is true use *nginxTargetPort else use *envoyPort | if no authorization is needed use *nginxTargetPort
   nodePort: 30003
 
   authorization:
