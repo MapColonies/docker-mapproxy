@@ -12,7 +12,7 @@ global:
   environment: {}
   authentication:
     jwtPublicKeySecretName: map-colonies-jwks
-  enabledOpala: false
+  opalaEnabled: false
 
 authentication:
   ca:
@@ -31,7 +31,7 @@ rasterCommon:
     key: "ca.crt"
   authentication:
     opa:
-      customHeaderName: "x-api-key"
+      customHeaderName: ""
   db:
     host: "localhost"
     name: "raster"
@@ -132,9 +132,6 @@ mapproxy:
       allowedOrigin: "*"
       allowedHeaders: ""
     authentication:
-      WMS:
-        enabled: true
-        requiredDomain: rasterWms
       token:
         queryName: token
         headerNameOverride: #will use "rasterCommon.authentication.opa.customHeaderName" if not specified
@@ -216,7 +213,7 @@ nginx:
     inactive: 60m
     expirationTime: 60m
     useTempPath: "off"
-    envoy:
+  envoy:
     image: envoyproxy/envoy
     imageTag: v1.20.7
     port: &envoyPort 8000
@@ -231,13 +228,14 @@ nginx:
         requests:
           cpu: 100m
           memory: 128Mi
-    opa:
+  opa:
     image: openpolicyagent/opa
     imageTag: 0.29.4-envoy-3
     jwtPublicKeySecretName: map-colonies-jwks
     secretName: docker-mapproxy-nginx-opa
     port: 9191
     enableLogging: false
+    logLevel: warn
     resources:
       enabled: true
       value:
@@ -250,15 +248,17 @@ nginx:
   port: 8080
   internalServicePort: 80
   nginxTargetPort: &nginxTargetPort 8080
-  targetPort: *nginxTargetPort  # --> if global.enabledOpala is true use *nginxTargetPort else use *envoyPort | if no authorization is needed use *nginxTargetPort
+  targetPort: *nginxTargetPort  # --> if global.opalaEnabled is true use *nginxTargetPort else use *envoyPort | if no authorization is needed use *nginxTargetPort
   nodePort: 30003
 
   authorization:
     enabled: true
     url: http://opa-int-opa-service.infra-services/v1/data/http/authz/decision
-    domain: ""
-    wmsDomain: "rasterWms"
-    wmtsDomain: "raster"
+    wms:
+      enabled: false
+      domain: "rasterWms"
+    wmts:
+      domain: "raster"
 
   extraVolumes:
     - name: nginx-config
@@ -298,7 +298,7 @@ nginx:
       mountPath: "/cache"
   
   sidecars: |-
-    {{- if not .Values.global.enabledOpala }}
+    {{- if and (not .Values.global.opalaEnabled) (.Values.authorization.enabled) }}
     - name: envoy
       image: {{ .Values.envoy.image }}:{{ .Values.envoy.imageTag }}
       volumeMounts:
@@ -355,29 +355,6 @@ nginx:
         initialDelaySeconds: 5
         periodSeconds: 30
       {{- end }}
-
-
-  route: {}
-    # enabled: true
-    # path: /api/raster/v1
-    # host:
-    # timeout:
-    #   enabled: false # defaults to 30s by openshift
-    #   duration: 60s # supported units (us, ms, s, m, h, d)
-    # tls:
-    #   enabled: true
-    #   useCerts: false
-    #   certificate: ""
-    #   key: ""
-    #   caCertificate: ""
-
-  ingress: {}
-    # enabled: false
-    # path: /api/raster/v1
-    # host: "localhost"
-    # tls:
-    #   enabled: true
-    #   useExternal: ""
 
   resources:
     enabled: true
