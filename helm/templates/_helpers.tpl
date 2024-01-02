@@ -128,12 +128,12 @@ Returns the tracing url from global if exists or from the chart's values
 {{- range $k, $v := (split "," .Values.mapproxy.env.cors.allowedHeaders) -}}
 {{- $headerList = append $headerList $v -}}
 {{- end -}}
-{{- if ne .Values.rasterCommon.authentication.opa.customHeaderName "" -}}
-{{- $headerList = append $headerList .Values.rasterCommon.authentication.opa.customHeaderName -}}
+{{- if ne .Values.nginx.opa.customHeaderName "" -}}
+{{- $headerList = append $headerList .Values.nginx.opa.customHeaderName -}}
 {{- end -}}
 {{- $headerList = uniq $headerList -}}
 {{-  quote (join "," $headerList) -}}
 {{- else -}}
-{{- .Values.rasterCommon.authentication.opa.customHeaderName | quote -}}
+{{- .Values.nginx.opa.customHeaderName | quote -}}
 {{- end -}}
 {{- end -}}

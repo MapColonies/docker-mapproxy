@@ -37,7 +37,7 @@ static_resources:
                             filename: /keys/mapColonies.jwks
                           forward: true #keep the jwt (if header is used) for mapproxy WMS auth
                           from_headers:
-                            - name: {{ .Values.rasterCommon.authentication.opa.customHeaderName }}
+                            - name: {{ .Values.nginx.opa.customHeaderName }}
                           from_params:
                             - token
                           jwt_cache_config:

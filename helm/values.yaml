@@ -126,15 +126,13 @@ mapproxy:
     statsServer:
       stats: 1717
       statsMinify: true
+  authentication:
+
   env:
     cors:
       enabled: true
       allowedOrigin: "*"
       allowedHeaders: ""
-    authentication:
-      token:
-        queryName: token
-        headerNameOverride: #will use "rasterCommon.authentication.opa.customHeaderName" if not specified
     ssl: # external paths
       CA_DIR: /opt/certs/ca/
       KEY_DIR: /opt/certs/key/
@@ -232,6 +230,7 @@ nginx:
     image: openpolicyagent/opa
     imageTag: 0.29.4-envoy-3
     jwtPublicKeySecretName: map-colonies-jwks
+    customHeaderName: ""
     secretName: docker-mapproxy-nginx-opa
     port: 9191
     enableLogging: false
@@ -254,6 +253,8 @@ nginx:
   authorization:
     enabled: true
     url: http://opa-int-opa-service.infra-services/v1/data/http/authz/decision
+    token:
+      queryName: token
     wms:
       enabled: false
       domain: "rasterWms"
