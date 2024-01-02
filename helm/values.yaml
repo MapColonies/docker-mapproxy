@@ -13,34 +13,6 @@ global:
   authentication:
     jwtPublicKeySecretName: map-colonies-jwks
   opalaEnabled: false
-
-authentication:
-  ca:
-    enabled: false
-    useExternal: false
-    externalSecretName: ""
-  ssl:
-    enabled: false
-    useExternal: false
-    externalSecretName: ""
-
-rasterCommon:
-  ca:
-    secretName: ""
-    path: "/usr/local/share/ca-certificates"
-    key: "ca.crt"
-  authentication:
-    opa:
-      customHeaderName: ""
-  db:
-    host: "localhost"
-    name: "raster"
-    port: 5432
-    sslEnabled: false
-    rejectUnauthorized: false
-    secrets:
-      useExternal: false
-      externalSecretName: ""
   storage:
     tilesStorageProvider: "FS"
     mapproxyConfigProvider: db
@@ -50,14 +22,56 @@ rasterCommon:
         name: internal-pvc
         tilesSubPath: tiles
     s3:
-      enabled: false
-      endpointUrl: "http://localhost:9000"
-      tilesBucket: "raster"
-      forcePathStyle: true
+      endpointUrl: ""
+      tilesBucket: ""
       sslEnabled: false
-      virtualHosting: false
-      awsHttps: false
-      secretName: raster-config-s3-secret
+      secretName: ""
+  db:
+    host: "localhost"
+    name: "raster"
+    port: 5432
+    sslEnabled: false
+    schema: ""
+    rejectUnauthorized: false
+    secrets:
+      useExternal: false
+      externalSecretName: ""
+  ca:
+    secretName: "root-ca"
+    path: "/usr/local/share/ca-certificates"
+    key: "ca.crt"
+
+authentication:
+  ssl:
+    enabled: false
+    useExternal: false
+    externalSecretName: ""
+
+storage:
+  tilesStorageProvider: "FS"
+  mapproxyConfigProvider: db
+  fs:
+    internalPvc:
+      enabled: true
+      name: internal-pvc
+      tilesSubPath: tiles
+  s3:
+    endpointUrl: ""
+    tilesBucket: ""
+    sslEnabled: false
+    secretName: ""
+
+db:
+  host: ""
+  name: ""
+  port: 5432
+  sslEnabled: false
+  schema: ""
+  rejectUnauthorized: false
+  secrets:
+    useExternal: false
+    externalSecretName: ""
+
 
 environment: development
 initialDelaySeconds: 60
@@ -84,7 +98,7 @@ mapproxy:
     connectionTimeoutSeconds: 0.1 # Set a connection timeout, nonnegative floating point number expressing *seconds*.
     timeoutSeconds: 0.1 # Set a operation timeout nonnegative, floating point number expressing *seconds*.
   wms:
-    enabled: true
+    enabled: false
     replicaCount: 1
     resources:
       enabled: true
