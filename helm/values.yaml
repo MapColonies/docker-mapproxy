@@ -190,7 +190,7 @@ initContainer:
 
 nginx:
   enabled: true
-  replicaCount: 1
+  fullnameOverride: ""
   image:
     repository: nginx
     tag: "latest"
