@@ -164,23 +164,6 @@ mapproxy:
         scrape: true
         port: 9117
       enabled: true
-  route:
-    enabled: true
-    host:
-    path: /api/raster/v1
-    https: true
-    useCert: false
-    timeout:
-      enabled: false # defaults to 30s by openshift
-      duration: 60s # supported units (us, ms, s, m, h, d)
-  ingress:
-    enabled: false
-    type: "nginx-org" # supported values: 'nginx-org' | 'nginx-kubernetes'
-    path: /api/raster/v1
-    host: "localhost"
-    tls:
-      enabled: true
-      useExternal: ""
 
 initContainer:
   image:
@@ -370,6 +353,24 @@ nginx:
         periodSeconds: 30
       {{- end }}
 
+  route:
+    enabled: true
+    host:
+    path: /api/raster/v1
+    https: true
+    useCert: false
+    timeout:
+      enabled: false # defaults to 30s by openshift
+      duration: 60s # supported units (us, ms, s, m, h, d)
+  ingress:
+    enabled: false
+    type: "nginx-org" # supported values: 'nginx-org' | 'nginx-kubernetes'
+    path: /api/raster/v1
+    host: "localhost"
+    tls:
+      enabled: true
+      useExternal: ""
+      
   resources:
     enabled: true
     value:
