@@ -1,4 +1,5 @@
 {{- define "mapproxy-chart.init-container" }}
+{{- $initConfigmapName := include "init-configmap.fullname" . -}}
 {{- $db := (include "common.db.merged" .) | fromYaml }}
 {{- $storage := (include "common.storage.merged" .) | fromYaml }}
         - name: init-mapproxy
@@ -43,7 +44,7 @@
             {{- end }}
           envFrom:
             - configMapRef:
-                name: {{ .releaseName }}-init-configmap
+                name: {{ $initConfigmapName }}
           volumeMounts:
             - mountPath: /app/downloads
               name: mapproxy-config

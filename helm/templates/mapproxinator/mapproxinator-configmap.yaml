@@ -1,13 +1,14 @@
 {{- if .Values.mapproxinator.enabled -}}
 {{- $chartName := include "mapproxy.name" . -}}
 {{- $releaseName := .Release.Name -}}
+{{- $mapproxinatorConfigmapName := include "mapproxinator-configmap.fullname" . -}}
 {{- $db := (include "common.db.merged" .) | fromYaml }}
 {{- $s3 := (include "common.s3.merged" .) | fromYaml }}
 {{- $storage := (include "common.storage.merged" .) | fromYaml }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ $releaseName }}-mapproxinator-configmap
+  name: {{ $mapproxinatorConfigmapName }}
   labels:
     app: {{ $releaseName }}-{{ $chartName }}
     component: mapproxinator-configmap

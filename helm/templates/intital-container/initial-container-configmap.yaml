@@ -1,13 +1,14 @@
 {{- if .Values.mapproxy.enabled -}}
 {{- $chartName := include "mapproxy.name" . -}}
 {{- $releaseName := .Release.Name -}}
+{{- $initConfigmapName := include "init-configmap.fullname" . -}}
 {{- $db := (include "common.db.merged" .) | fromYaml }}
 {{- $s3 := (include "common.s3.merged" .) | fromYaml }}
 {{- $storage := (include "common.storage.merged" .) | fromYaml }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ $releaseName }}-init-configmap
+  name: {{ $initConfigmapName }}
   labels:
     app: {{ $releaseName }}-{{ $chartName }}
     component: init-container-configmap

@@ -2,6 +2,7 @@
   {{- $db := (include "common.db.merged" .) | fromYaml }}
   {{- $fs := (include "common.fs.merged" .) | fromYaml }}
   {{- $s3 := (include "common.s3.merged" .) | fromYaml }}
+  {{- $initConfigmapName := include "init-configmap.fullname" . -}}
   {{- $cloudProviderDockerRegistryUrl := include "mapproxy.cloudProviderDockerRegistryUrl" . -}}
   {{- $cloudProviderImagePullSecretName := include "mapproxy.cloudProviderImagePullSecretName" . -}}
   {{- $sslSecretName := ternary .Values.authentication.ssl.externalSecretName (printf "%s%s" .Release.Name "-open-ssl") .Values.authentication.ssl.useExternal }}
@@ -86,7 +87,7 @@
         {{- end }}
         - name: uwsgi-config
           configMap:
-            name: {{ .releaseName }}-init-configmap
+            name: {{ $initConfigmapName }}
             items:
             - key: "UWSGI_INI"
               path: "uwsgi.ini"

@@ -1,4 +1,5 @@
 {{- define "mapproxy-chart.mapproxinator-container" }}
+{{- $mapproxinatorConfigmapName := include "mapproxinator-configmap.fullname" . -}}
 {{- $db := (include "common.db.merged" .) | fromYaml }}
 {{- $storage := (include "common.storage.merged" .) | fromYaml }}
         - name: mapproxinator
@@ -53,7 +54,7 @@
             {{- end }}
           envFrom:
             - configMapRef:
-                name: {{ .releaseName }}-mapproxinator-configmap
+                name: {{ $mapproxinatorConfigmapName }}
           volumeMounts:
             - name: shared-config
               mountPath: /uwsgi_config
