@@ -72,6 +72,12 @@ db:
     useExternal: false
     externalSecretName: ""
 
+# additional pod annotations
+# example:
+# podAnnotations:
+  # annotation1: annotation-value-1
+  # annotation2: annotation-value-2
+podAnnotations: {}
 
 environment: development
 initialDelaySeconds: 60
@@ -89,7 +95,7 @@ env:
     enabled: false
     url: http://localhost:55681/v1/trace
   metrics:
-    enabled: false
+    enabled: true
     url: http://localhost:55681/v1/metrics
 
 mapproxy:
