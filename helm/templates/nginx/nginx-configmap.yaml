@@ -1,10 +1,11 @@
 {{- if .Values.nginx.enabled -}}
 {{- $chartName := include "mapproxy.name" . -}}
 {{- $releaseName := .Release.Name -}}
+{{- $nginxConfigmapName := include "nginx-configmap.fullname" . }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ $releaseName }}-nginx-configmap
+  name: {{ $nginxConfigmapName }}
   labels:
     app: {{ $releaseName }}-{{ $chartName }}
     component: nginx-configmap

@@ -267,7 +267,7 @@ nginx:
         medium: "Memory"
     - name: proxy-config
       configMap:
-        name: "{{ .Release.Name }}-envoy"
+        name: "{{ .Release.Name }}-mapproxy-envoy"
     - name: opa-policy
       secret:
         secretName: "{{ .Release.Name }}-opa"
