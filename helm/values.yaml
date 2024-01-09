@@ -72,7 +72,7 @@ db:
     useExternal: false
     externalSecretName: ""
 
-# additional pod annotations
+# add pod annotations
 # example:
 # podAnnotations:
   # annotation1: annotation-value-1
