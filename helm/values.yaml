@@ -3,32 +3,28 @@ global:
     dockerRegistryUrl: my-registry-url.io
     imagePullSecretName: "my-registry-secret"
     flavor: openshift
-  tracing:
-    enabled: false
-    url: http://localhost:55681/v1/trace
-  metrics:
-    enabled: false
-    url: http://localhost:55681/v1/metrics
-  environment: {}
+  tracing: {}
+  metrics: {}
+  environment: ""
   authentication:
     jwtPublicKeySecretName: map-colonies-jwks
   opalaEnabled: false
   storage:
-    tilesStorageProvider: "FS"
-    mapproxyConfigProvider: db
+    tilesStorageProvider: ""
+    mapproxyConfigProvider: ""
     fs:
       internalPvc:
-        enabled: true
-        name: internal-pvc
-        tilesSubPath: tiles
+        enabled: false
+        name: ""
+        tilesSubPath: ""
     s3:
       endpointUrl: ""
       tilesBucket: ""
       sslEnabled: false
       secretName: ""
   db:
-    host: "localhost"
-    name: "raster"
+    host: ""
+    name: ""
     port: 5432
     sslEnabled: false
     schema: ""
@@ -48,13 +44,13 @@ authentication:
     externalSecretName: ""
 
 storage:
-  tilesStorageProvider: "FS"
-  mapproxyConfigProvider: db
+  tilesStorageProvider: ""
+  mapproxyConfigProvider: ""
   fs:
     internalPvc:
-      enabled: true
-      name: internal-pvc
-      tilesSubPath: tiles
+      enabled: false
+      name: ""
+      tilesSubPath: ""
   s3:
     endpointUrl: ""
     tilesBucket: ""
