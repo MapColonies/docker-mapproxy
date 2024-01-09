@@ -242,6 +242,7 @@ nginx:
         requests:
           cpu: 100m
           memory: 128Mi
+
   port: 8080
   internalServicePort: 80
   nginxTargetPort: &nginxTargetPort 8080
@@ -296,64 +297,7 @@ nginx:
     - name: cache
       mountPath: "/cache"
   
-  sidecars: |-
-    {{- if and (not .Values.global.opalaEnabled) (.Values.authorization.enabled) }}
-    - name: envoy
-      image: {{ .Values.envoy.image }}:{{ .Values.envoy.imageTag }}
-      volumeMounts:
-      - name: proxy-config
-        readOnly: true
-        mountPath: /config
-      - name: jwt-public-keys
-        readOnly: true
-        mountPath: /keys/mapColonies.jwks
-        subPath: mapColonies.jwks
-      args:
-      - "envoy"
-      - "--config-path"
-      - "/config/envoy.yaml"
-      ports:
-      - name: http
-        containerPort: 8000
-        protocol: TCP
-      {{- if .Values.envoy.resources.enabled }}
-      resources:
-        {{- toYaml .Values.envoy.resources.value | nindent 4 }}
-      {{- end }}
-    - name: opa
-      image: "{{ .Values.opa.image }}:{{ .Values.opa.imageTag }}"
-      volumeMounts:
-      - readOnly: true
-        mountPath: /policy
-        name: opa-policy
-      args:
-      - "run"
-      - "--server"
-      - "--addr=0.0.0.0:8181"
-      - "--diagnostic-addr=0.0.0.0:8282"
-      - "--set=plugins.envoy_ext_authz_grpc.add=:{{ .Values.opa.imageTag }}"
-      - "--set=plugins.envoy_ext_authz_grpc.path=envoy/authz/allow"
-      {{- if .Values.opa.enableLogging }}
-      - "--set=decision_logs.console=true"
-      {{- end }}
-      - "/policy/policy.rego"
-      {{- if .Values.opa.resources.enabled }}
-      resources:
-        {{- toYaml .Values.opa.resources.value | nindent 12 }}
-      {{- end }}
-      livenessProbe:
-        httpGet:
-          path: /health?plugins
-          port: 8282
-        initialDelaySeconds: 5
-        periodSeconds: 30
-      readinessProbe:
-        httpGet:
-          path: /health?plugins
-          port: 8282
-        initialDelaySeconds: 5
-        periodSeconds: 30
-      {{- end }}
+  sidecars: ''
 
   route:
     enabled: true
