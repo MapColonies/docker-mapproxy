@@ -91,7 +91,7 @@ env:
     enabled: false
     url: http://localhost:55681/v1/trace
   metrics:
-    enabled: true
+    enabled: false
     url: http://localhost:55681/v1/metrics
 
 mapproxy:
@@ -193,6 +193,7 @@ initContainer:
 nginx:
   enabled: true
   fullnameOverride: ""
+  replicaCount: 1
   image:
     repository: nginx
     tag: "latest"
@@ -297,7 +298,7 @@ nginx:
     - name: cache
       mountPath: "/cache"
   
-  sidecars: '|-
+  sidecars: |-
     {{- if and (not .Values.global.opalaEnabled) (.Values.authorization.enabled) }}
     - name: envoy
       image: {{ .Values.envoy.image }}:{{ .Values.envoy.imageTag }}
@@ -354,7 +355,7 @@ nginx:
           port: 8282
         initialDelaySeconds: 5
         periodSeconds: 30
-      {{- end }}'
+      {{- end }}
 
   route:
     enabled: true
