@@ -3,8 +3,13 @@ global:
     dockerRegistryUrl: my-registry-url.io
     imagePullSecretName: "my-registry-secret"
     flavor: openshift
-  tracing: {}
-  metrics: {}
+  tracing:
+    enabled: false
+    url: http://localhost:55681/v1/trace
+    samplingRatioDenominator: 1000
+  metrics:
+    enabled: false
+    url: http://localhost:55681/v1/metrics
   environment: ""
   authentication:
     jwtPublicKeySecretName: map-colonies-jwks
@@ -90,6 +95,7 @@ env:
   tracing:
     enabled: false
     url: http://localhost:55681/v1/trace
+    samplingRatioDenominator: 1000
   metrics:
     enabled: false
     url: http://localhost:55681/v1/metrics
@@ -256,7 +262,7 @@ nginx:
     token:
       queryName: token
     wms:
-      enabled: false
+      enabled: true
       domain: "rasterWms"
     wmts:
       domain: "raster"
@@ -399,6 +405,10 @@ mapproxinator:
     poll:
       timeout:
         frequencyMS: 5000
+    gracefulReloadMaxSeconds: 300
+    logPrettyPrintEnabled: false
+    responseCompressionEnabled: true
+    requestPayloadLimit: 1mb
     ssl: # external paths
       CA_DIR: /opt/certs/ca/
       KEY_DIR: /opt/certs/key/
@@ -407,6 +417,7 @@ mapproxinator:
       KEY_FILE_LOCATION: /opt/certs/key/key.pem
       CERT_FILE_LOCATION: /opt/certs/cert/cert.pem
     logPrettyPrintEnabled: false
+    gracefulReloadMaxSeconds: 300
     responseCompressionEnabled: true
     requestPayloadLimit: 1mb
   resources:
