@@ -52,7 +52,7 @@ if(os.environ.get('AUTH_ENABLED', 'false').lower() == 'true'):
 endpoint = os.environ.get('TELEMETRY_TRACING_ENDPOINT', 'localhost:4317')
 tracing_enabled = os.environ.get('TELEMETRY_TRACING_ENABLED', 'false')
 sampling_ratio_denominator = int(os.environ.get(
-    'TELEMETRY_SAMPLING_RATIO_DENOMINATOR', '1000'))
+    'TELEMETRY_TRACING_SAMPLING_RATIO_DENOMINATOR', '1000'))
 
 if tracing_enabled.strip().lower() == 'true':
     # Create span exporter
