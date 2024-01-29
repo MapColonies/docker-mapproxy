@@ -171,6 +171,9 @@ mapproxy:
         scrape: true
         port: 9117
       enabled: true
+    tracing:
+    enabled: false
+    url: http://localhost:55681/v1/trace
 
 initContainer:
   image:
