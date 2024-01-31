@@ -5,7 +5,7 @@ global:
     flavor: openshift
   tracing:
     enabled: false
-    url: http://localhost:55681/v1/trace
+    url: ""
     samplingRatioDenominator: 1000
   metrics:
     enabled: false
@@ -170,9 +170,9 @@ mapproxy:
     requestPayloadLimit: 1mb
     metrics:
       prometheus:
-        scrape: true
+        scrape: false
         port: 9117
-      enabled: true
+      enabled: false
 
 initContainer:
   image:
