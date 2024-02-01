@@ -64,3 +64,7 @@ Custom definitions
 {{- define "common.tracing.merged" -}}
 {{- include "common.tplvalues.merge" ( dict "values" ( list .Values.global.tracing .Values.tracing ) "context" . ) }}
 {{- end -}}
+
+{{- define "common.metrics.merged" -}}
+{{- include "common.tplvalues.merge" ( dict "values" ( list .Values.global.metrics .Values.metrics ) "context" . ) }}
+{{- end -}}
