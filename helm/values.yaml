@@ -172,11 +172,6 @@ mapproxy:
     logPrettyPrintEnabled: false
     responseCompressionEnabled: true
     requestPayloadLimit: 1mb
-    metrics:
-      prometheus:
-        scrape: false
-        port: 9117
-      enabled: false
 
 initContainer:
   image:
