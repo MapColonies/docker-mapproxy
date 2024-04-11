@@ -55,8 +55,7 @@ class RedisCache(TileCacheBase):
         self.socket_timeout = float(os.environ.get('SOCKET_TIMEOUT_SECONDS', 0.1))
         # Set a connection timeout, nonnegative floating point number expressing *seconds*.
         self.socket_connection_timeout =  float(os.environ.get('SOCKET_CONNECTION_TIMEOUT_SECONDS', 0.1))
-        # Enable SSL only if certificate and key are provided (CA certificates are not mandatory, but if provided use
-        # them)
+        
         ssl_enabled = get_redis_variable("REDIS_TLS")
         ssl_certfile = self.ssl_certfile if ssl_enabled else None
         ssl_keyfile = self.ssl_keyfile if ssl_enabled else None
