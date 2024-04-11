@@ -6,6 +6,8 @@
           image: {{ .cloudProviderDockerRegistryUrl }}{{ .Values.mapproxy.image.repository }}:{{ .Values.mapproxy.image.tag }}
           imagePullPolicy: {{ .Values.imagePullPolicy }} 
           env:
+            - name: REDIS_TLS
+              value: {{ .Values.mapproxy.redis.tls | quote }}
             - name: SOCKET_CONNECTION_TIMEOUT_SECONDS
               value: {{ .Values.mapproxy.socket.connectionTimeoutSeconds | quote }}
             - name: SOCKET_TIMEOUT_SECONDS

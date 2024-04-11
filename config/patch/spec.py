@@ -169,6 +169,10 @@ cache_types = {
         'username': str(),
         'prefix': str(),
         'default_ttl': int(),
+        'ssl_certfile': str(),
+        'ssl_keyfile': str(),
+        'ssl_ca_certs': str(),
+
     },
     'compact': {
         'directory': str(),

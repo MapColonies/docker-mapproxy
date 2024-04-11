@@ -38,9 +38,15 @@ log = logging.getLogger(__name__)
 
 
 class RedisCache(TileCacheBase):
-    def __init__(self, host, port, prefix, ttl=0, db=0, username=None, password=None):
+    def __init__(
+            self, host, port, prefix, ttl=0, db=0, username=None, password=None,ssl_certfile=None,
+            ssl_keyfile=None, ssl_ca_certs=None):
         if redis is None:
             raise ImportError("Redis backend requires 'redis' package.")
+
+        self.ssl_certfile = ssl_certfile
+        self.ssl_keyfile = ssl_keyfile
+        self.ssl_ca_certs = ssl_ca_certs
 
         self.prefix = prefix
         self.lock_cache_id = 'redis-' + hashlib.md5((host + str(port) + prefix + str(db)).encode('utf-8')).hexdigest()
@@ -49,7 +55,25 @@ class RedisCache(TileCacheBase):
         self.socket_timeout = float(os.environ.get('SOCKET_TIMEOUT_SECONDS', 0.1))
         # Set a connection timeout, nonnegative floating point number expressing *seconds*.
         self.socket_connection_timeout =  float(os.environ.get('SOCKET_CONNECTION_TIMEOUT_SECONDS', 0.1))
-        self.r = redis.StrictRedis(host=host, port=port, db=db, username=username, password=password, socket_timeout=self.socket_timeout, socket_connect_timeout=self.socket_connection_timeout)
+        # Enable SSL only if certificate and key are provided (CA certificates are not mandatory, but if provided use
+        # them)
+        ssl_enabled = get_redis_variable('REDIS_TLS')
+        ssl_certfile = self.ssl_certfile if ssl_enabled else None
+        ssl_keyfile = self.ssl_keyfile if ssl_enabled else None
+        ssl_ca_certs = self.ssl_ca_certs if ssl_enabled and self.ssl_ca_certs else Nonessl_enabled)
+        self.r = redis.StrictRedis(
+            host=host, 
+            port=port, 
+            db=db, 
+            username=username, 
+            password=password, 
+            socket_timeout=self.socket_timeout, 
+            socket_connect_timeout=self.socket_connection_timeout,
+            ssl_certfile=ssl_certfile,
+            ssl_keyfile=ssl_keyfile,
+            ssl_ca_certs=ssl_ca_certs,
+            ssl=ssl_enabled      
+        )
 
     def _key(self, tile):
         x, y, z = tile.coord
@@ -130,3 +154,10 @@ class RedisCache(TileCacheBase):
         key = self._key(tile)
         self.r.delete(key)
         return True
+
+def get_redis_variable(name):
+    env_var = os.environ.get(name, "false")
+    if env_var.lower().strip() in ("true"):
+        return True
+    else:   
+        return False

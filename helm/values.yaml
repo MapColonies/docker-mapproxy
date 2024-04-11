@@ -111,6 +111,8 @@ mapproxy:
   socket:
     connectionTimeoutSeconds: 0.1 # Set a connection timeout, nonnegative floating point number expressing *seconds*.
     timeoutSeconds: 0.1 # Set a operation timeout nonnegative, floating point number expressing *seconds*.
+  redis:
+    tls: true
   wms:
     enabled: false
     replicaCount: 1
