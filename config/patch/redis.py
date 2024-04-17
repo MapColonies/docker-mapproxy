@@ -52,8 +52,9 @@ class RedisCache(TileCacheBase):
         self.socket_connection_timeout =  float(os.environ.get('SOCKET_CONNECTION_TIMEOUT_SECONDS', 0.1))
         
         ssl_enabled = get_redis_variable("REDIS_TLS")
+        # didnt add this variable in the values and config map file to let it be None on purpose for now
         cert_reqs =  os.environ.get("SSL_CERTS_REQS", None)
-        
+
         self.r = redis.StrictRedis(
             host=host, 
             port=port, 
