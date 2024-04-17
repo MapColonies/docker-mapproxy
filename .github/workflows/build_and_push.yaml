@@ -1,20 +1,23 @@
-name: "Publish release on tag push"
-
 on:
+  workflow_dispatch:
   push:
     tags:
-      - "v*"
+      - 'v*'
 
 jobs:
-  publish_release:
+  build_and_push:
     runs-on: ubuntu-latest
+    env:
+      Docker_Repository: ${{ secrets.ACR_URL }}/${{ github.event.repository.name }}:${{ github.ref_name }}
     steps:
-      - name: Checkout code for CHANGELOG.md
-        uses: actions/checkout@v2
-
-      - name: Publish Release to Github
-        uses: softprops/action-gh-release@v1
+      - uses: actions/checkout@v2
+      - uses: azure/docker-login@v1
         with:
-          body_path: CHANGELOG.md
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          login-server: ${{ secrets.ACR_URL }}
+          username: ${{ secrets.ACR_PUSH_USER }}
+          password: ${{ secrets.ACR_PUSH_TOKEN }}
+      - name: downcase repository
+        run: |
+          echo "Docker_Repository=${Docker_Repository,,}" >>${GITHUB_ENV}
+      - run: docker build . -t ${{ env.Docker_Repository }}
+      - run: docker push ${{ env.Docker_Repository }}
