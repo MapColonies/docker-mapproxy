@@ -91,8 +91,8 @@ metrics:
 # add pod annotations
 # example:
 # podAnnotations:
-  # annotation1: annotation-value-1
-  # annotation2: annotation-value-2
+# annotation1: annotation-value-1
+# annotation2: annotation-value-2
 podAnnotations: {}
 
 environment: development
@@ -308,7 +308,7 @@ nginx:
       subPath: nginx.mapproxy.wmts.conf
     - name: cache
       mountPath: "/cache"
-  
+
   sidecars: |-
     {{- if and (not .Values.global.opalaEnabled) (.Values.authorization.enabled) }}
     - name: envoy
@@ -370,13 +370,20 @@ nginx:
 
   route:
     enabled: true
-    host:
-    path: /api/raster/v1
-    https: true
-    useCert: false
+    routesMapping:
+      - host:
+        path: /api/raster/v1
     timeout:
       enabled: false # defaults to 30s by openshift
       duration: 60s # supported units (us, ms, s, m, h, d)
+    rewriteTarget: ""
+    tls:
+      enabled: true
+      useCerts: false
+      certificate: ""
+      key: ""
+      caCertificate: ""
+
   ingress:
     enabled: false
     type: "nginx-org" # supported values: 'nginx-org' | 'nginx-kubernetes'
@@ -385,7 +392,7 @@ nginx:
     tls:
       enabled: true
       useExternal: ""
-      
+
   resources:
     enabled: true
     value:
