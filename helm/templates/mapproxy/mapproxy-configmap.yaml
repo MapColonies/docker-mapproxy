@@ -19,7 +19,7 @@ data:
   AWS_HTTPS: {{ $s3.sslEnabled | quote }}
   TELEMETRY_TRACING_ENABLED: {{ $tracing.enabled | quote }}
   TELEMETRY_TRACING_ENDPOINT: {{ $tracing.url | quote }}
-  TELEMETRY_SAMPLING_RATIO_DENOMINATOR: {{ $tracing.samplingRatioDenominator | quote }}
+  TELEMETRY_TRACING_SAMPLING_RATIO_DENOMINATOR: {{ $tracing.samplingRatioDenominator | quote }}
   CORS_ENABLED: {{ .Values.mapproxy.env.cors.enabled | quote }}
   CORS_ALLOWED_HEADERS: {{ template "map-proxy.cors.allowedHeaders" . }}
   CORS_ALLOWED_ORIGIN: {{ .Values.mapproxy.env.cors.allowedOrigin | quote }}
