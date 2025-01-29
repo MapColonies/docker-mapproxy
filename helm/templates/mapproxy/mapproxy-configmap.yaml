@@ -26,7 +26,7 @@ data:
   AUTH_ENABLED: {{ .Values.nginx.authorization.wms.domain | quote }}
   {{ if and (not .Values.nginx.opalaEnabled) (.Values.nginx.authorization.wms.domain) }}
   AUTH_VALID_DOMAIN: {{ .Values.nginx.authorization.wms.domain | quote }}
-  AUTH_HEADER_NAME: {{ .Values.nginx.opa.customHeaderName | quote }}
+  AUTH_HEADER_NAME: {{ .Values.mapproxy.env.cors.allowedHeaders | quote }}
   AUTH_QUERY_NAME: {{ .Values.nginx.authorization.token.queryName | quote }}
   {{- end}}
 {{- end }}

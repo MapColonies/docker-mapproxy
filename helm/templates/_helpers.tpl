@@ -99,12 +99,7 @@ Returns the cloud provider image pull secret name from global if exists or from 
 {{- range $k, $v := (split "," .Values.mapproxy.env.cors.allowedHeaders) -}}
 {{- $headerList = append $headerList $v -}}
 {{- end -}}
-{{- if ne .Values.nginx.opa.customHeaderName "" -}}
-{{- $headerList = append $headerList .Values.nginx.opa.customHeaderName -}}
-{{- end -}}
 {{- $headerList = uniq $headerList -}}
 {{-  quote (join "," $headerList) -}}
-{{- else -}}
-{{- .Values.nginx.opa.customHeaderName | quote -}}
 {{- end -}}
 {{- end -}}
