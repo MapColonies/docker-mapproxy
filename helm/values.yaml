@@ -220,6 +220,8 @@ nginx:
     inactive: 60m
     expirationTime: 60m
     useTempPath: "off"
+  headers:
+    accessControlMaxAge: ''
 
   port: 8080
   internalServicePort: 80
