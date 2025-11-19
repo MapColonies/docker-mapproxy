@@ -23,8 +23,8 @@ data:
   CORS_ENABLED: {{ .Values.mapproxy.env.cors.enabled | quote }}
   CORS_ALLOWED_HEADERS: {{ template "map-proxy.cors.allowedHeaders" . }}
   CORS_ALLOWED_ORIGIN: {{ .Values.mapproxy.env.cors.allowedOrigin | quote }}
-  AUTH_ENABLED: {{ .Values.nginx.authorization.wms.domain | quote }}
-  {{ if and (not .Values.nginx.opalaEnabled) (.Values.nginx.authorization.wms.domain) }}
+  AUTH_ENABLED: {{ .Values.nginx.authorization.enabled | quote }}
+  {{ if (and (.Values.global.opalaEnabled) (.Values.nginx.authorization.enabled) }}
   AUTH_VALID_DOMAIN: {{ .Values.nginx.authorization.wms.domain | quote }}
   AUTH_HEADER_NAME: {{ .Values.mapproxy.env.cors.allowedHeaders | quote }}
   AUTH_QUERY_NAME: {{ .Values.nginx.authorization.token.queryName | quote }}
