@@ -106,6 +106,16 @@ cloudProvider:
   imagePullSecretName: "my-registry-secret"
   flavor: openshift
 
+mclabels:
+  component: backend
+  partOf: serving
+  owner: raster
+  gisDomain: raster
+  prometheus: 
+    enabled: true
+    port: 9117
+  logScraping: true
+
 mapproxy:
   enabled: true
   socket:

@@ -26,6 +26,7 @@
         app.kubernetes.io/name: {{ include "mapproxy.name" . }}-{{ .type }}
         app.kubernetes.io/instance: {{ .releaseName }}-{{ .type }}
       annotations:
+        {{ include "mclabels.annotations" . | nindent 8 }}
         {{- if .Values.resetOnConfigChange }}
         checksum/configmap: {{
           include (print $.Template.BasePath "/mapproxy/mapproxy-configmap.yaml") . | sha256sum }}
