@@ -16,7 +16,7 @@ global:
   environment: ""
   authentication:
     jwtPublicKeySecretName: map-colonies-jwks
-  opalaEnabled: false
+  opalaEnabled: true
   storage:
     tilesStorageProvider: ""
     mapproxyConfigProvider: ""
@@ -107,6 +107,7 @@ cloudProvider:
   flavor: openshift
 
 mclabels:
+  #environment: development
   component: backend
   partOf: serving
   owner: raster
@@ -238,7 +239,7 @@ nginx:
   nodePort: 30003
 
   authorization:
-    enabled: true
+    enabled: false
     url: http://opa-int-opa-service.infra-services/v1/data/http/authz/decision
     token:
       queryName: token

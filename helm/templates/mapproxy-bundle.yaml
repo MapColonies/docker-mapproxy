@@ -12,6 +12,7 @@
   replicas: {{ .replicaCount }}
   selector:
     matchLabels:
+      {{ include "mclabels.selectorLabels" . | nindent 6 }}
       app: {{ .chartName }}-{{ .type }}
       release: {{ .releaseName }}-{{ .type }}
       run: {{ .releaseName }}-{{ .chartName }}-{{ .type }}
@@ -20,6 +21,7 @@
   template:
     metadata:
       labels:
+        {{ include "mclabels.selectorLabels" . | nindent 8 }}
         app: {{ .chartName }}-{{ .type }}
         release: {{ .releaseName }}-{{ .type }}
         run: {{ .releaseName }}-{{ .chartName }}-{{ .type }}
@@ -30,10 +32,6 @@
         {{- if .Values.resetOnConfigChange }}
         checksum/configmap: {{
           include (print $.Template.BasePath "/mapproxy/mapproxy-configmap.yaml") . | sha256sum }}
-        {{- end }}
-        {{- if $metrics.enabled }}
-        prometheus.io/port: {{ $metrics.prometheus.port | quote }}
-        prometheus.io/scrape: {{ $metrics.prometheus.scrape | quote }}
         {{- end }}
         {{- if .Values.podAnnotations }}
         {{- toYaml .Values.podAnnotations | nindent 8 }}
