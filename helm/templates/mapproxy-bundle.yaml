@@ -16,19 +16,14 @@
       app: {{ .chartName }}-{{ .type }}
       release: {{ .releaseName }}-{{ .type }}
       run: {{ .releaseName }}-{{ .chartName }}-{{ .type }}
-      app.kubernetes.io/name: {{ include "mapproxy.name" . }}-{{ .type }}
-      app.kubernetes.io/instance: {{ .releaseName }}-{{ .type }}
   template:
     metadata:
       labels:
-        {{ include "mclabels.selectorLabels" . | nindent 8 }}
         app: {{ .chartName }}-{{ .type }}
         release: {{ .releaseName }}-{{ .type }}
         run: {{ .releaseName }}-{{ .chartName }}-{{ .type }}
-        app.kubernetes.io/name: {{ include "mapproxy.name" . }}-{{ .type }}
-        app.kubernetes.io/instance: {{ .releaseName }}-{{ .type }}
+        {{ include "mclabels.selectorLabels" . | nindent 8 }}
       annotations:
-        {{ include "mclabels.annotations" . | nindent 8 }}
         {{- if .Values.resetOnConfigChange }}
         checksum/configmap: {{
           include (print $.Template.BasePath "/mapproxy/mapproxy-configmap.yaml") . | sha256sum }}
@@ -36,6 +31,7 @@
         {{- if .Values.podAnnotations }}
         {{- toYaml .Values.podAnnotations | nindent 8 }}
         {{- end }}
+        {{ include "mclabels.annotations" . | nindent 8 }}
     spec:
     {{- if $cloudProviderImagePullSecretName }}
       imagePullSecrets:

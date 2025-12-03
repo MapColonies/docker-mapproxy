@@ -16,7 +16,7 @@ global:
   environment: ""
   authentication:
     jwtPublicKeySecretName: map-colonies-jwks
-  opalaEnabled: true
+  opalaEnabled: false
   storage:
     tilesStorageProvider: ""
     mapproxyConfigProvider: ""
