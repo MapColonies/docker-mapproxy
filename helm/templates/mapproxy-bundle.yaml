@@ -12,17 +12,17 @@
   replicas: {{ .replicaCount }}
   selector:
     matchLabels:
-      {{ include "mclabels.selectorLabels" . | nindent 6 }}
       app: {{ .chartName }}-{{ .type }}
       release: {{ .releaseName }}-{{ .type }}
       run: {{ .releaseName }}-{{ .chartName }}-{{ .type }}
+      {{ include "mclabels.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
         app: {{ .chartName }}-{{ .type }}
         release: {{ .releaseName }}-{{ .type }}
         run: {{ .releaseName }}-{{ .chartName }}-{{ .type }}
-        {{ include "mclabels.selectorLabels" . | nindent 8 }}
+        {{ include "mclabels.labels" . | nindent 8 }}
       annotations:
         {{- if .Values.resetOnConfigChange }}
         checksum/configmap: {{

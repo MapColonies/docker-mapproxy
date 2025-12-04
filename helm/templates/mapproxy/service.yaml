@@ -29,4 +29,5 @@ spec:
     app: {{ $chartName }}-{{ .type }}
     release: {{ $releaseName }}-{{ .type }}
     run: {{ $releaseName }}-{{ $chartName }}-{{ .type }}
+    {{- include "mapproxy.selectorLabels" . | nindent 4 }}
 {{- end }}

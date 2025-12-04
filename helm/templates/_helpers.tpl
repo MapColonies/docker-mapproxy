@@ -44,6 +44,8 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 Selector labels
 */}}
 {{- define "mapproxy.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "mapproxy.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}-{{ .type }}
 {{ include "mclabels.selectorLabels" . }}
 {{- end }}
 
