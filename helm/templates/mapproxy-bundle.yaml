@@ -15,14 +15,14 @@
       app: {{ .chartName }}-{{ .type }}
       release: {{ .releaseName }}-{{ .type }}
       run: {{ .releaseName }}-{{ .chartName }}-{{ .type }}
-      {{ include "mclabels.selectorLabels" . | nindent 6 }}
+      {{ include "mapproxy.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
         app: {{ .chartName }}-{{ .type }}
         release: {{ .releaseName }}-{{ .type }}
         run: {{ .releaseName }}-{{ .chartName }}-{{ .type }}
-        {{ include "mclabels.labels" . | nindent 8 }}
+        {{ include "mapproxy.labels" . | nindent 8 }}
       annotations:
         {{- if .Values.resetOnConfigChange }}
         checksum/configmap: {{
