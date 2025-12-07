@@ -32,11 +32,23 @@ Create chart name and version as used by the chart label.
 Common labels
 */}}
 {{- define "mapproxy.labels" -}}
+app.kubernetes.io/name: {{ include "mapproxy.name" . }}-{{ .type }}
+app.kubernetes.io/instance: {{ .Release.Name }}-{{ .type }}
 helm.sh/chart: {{ include "mapproxy.chart" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{ include "mclabels.labels" . }}
+{{- end }}
+
+{{/*
+Selector labels
+*/}}
+{{- define "mapproxy.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "mapproxy.name" . }}-{{ .type }}
+app.kubernetes.io/instance: {{ .Release.Name }}-{{ .type }}
+{{ include "mclabels.selectorLabels" . }}
 {{- end }}
 
 {{/*

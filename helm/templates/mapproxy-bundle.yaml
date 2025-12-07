@@ -15,28 +15,23 @@
       app: {{ .chartName }}-{{ .type }}
       release: {{ .releaseName }}-{{ .type }}
       run: {{ .releaseName }}-{{ .chartName }}-{{ .type }}
-      app.kubernetes.io/name: {{ include "mapproxy.name" . }}-{{ .type }}
-      app.kubernetes.io/instance: {{ .releaseName }}-{{ .type }}
+      {{ include "mapproxy.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
         app: {{ .chartName }}-{{ .type }}
         release: {{ .releaseName }}-{{ .type }}
         run: {{ .releaseName }}-{{ .chartName }}-{{ .type }}
-        app.kubernetes.io/name: {{ include "mapproxy.name" . }}-{{ .type }}
-        app.kubernetes.io/instance: {{ .releaseName }}-{{ .type }}
+        {{ include "mapproxy.labels" . | nindent 8 }}
       annotations:
         {{- if .Values.resetOnConfigChange }}
         checksum/configmap: {{
           include (print $.Template.BasePath "/mapproxy/mapproxy-configmap.yaml") . | sha256sum }}
         {{- end }}
-        {{- if $metrics.enabled }}
-        prometheus.io/port: {{ $metrics.prometheus.port | quote }}
-        prometheus.io/scrape: {{ $metrics.prometheus.scrape | quote }}
-        {{- end }}
         {{- if .Values.podAnnotations }}
         {{- toYaml .Values.podAnnotations | nindent 8 }}
         {{- end }}
+        {{ include "mclabels.annotations" . | nindent 8 }}
     spec:
     {{- if $cloudProviderImagePullSecretName }}
       imagePullSecrets:

@@ -48,10 +48,6 @@
                   name: {{ .postgresSecretName }}
                   key: password                        
             {{- end }}
-            {{- if .Values.global.ca.secretName }}
-            - name: REQUESTS_CA_BUNDLE
-              value: {{ printf "%s/%s" .Values.global.ca.path .Values.global.ca.key | quote }}
-            {{- end }}
           envFrom:
             - configMapRef:
                 name: {{ $mapproxinatorConfigmapName }}

@@ -106,6 +106,17 @@ cloudProvider:
   imagePullSecretName: "my-registry-secret"
   flavor: openshift
 
+mclabels:
+  #environment: development
+  component: backend
+  partOf: serving
+  owner: raster
+  gisDomain: raster
+  prometheus: 
+    enabled: true
+    port: 9117
+  logScraping: true
+
 mapproxy:
   enabled: true
   socket:
@@ -228,7 +239,7 @@ nginx:
   nodePort: 30003
 
   authorization:
-    enabled: true
+    enabled: false
     url: http://opa-int-opa-service.infra-services/v1/data/http/authz/decision
     token:
       queryName: token
