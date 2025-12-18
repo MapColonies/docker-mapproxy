@@ -1,22 +1,22 @@
 # syntax=docker/dockerfile:1
 #--------- Generic stuff all our Dockerfiles should start with so we get caching ------------
-FROM python:3.7.10
+FROM python:3.9-slim-bullseye
 MAINTAINER Tim Sutton<tim@kartoza.com>
 
 #-------------Application Specific Stuff ----------------------------------------------------
 RUN apt-get -y update && \
     apt-get install -y \
     gettext \
-    python-yaml \
+    python3-yaml \
     libgeos-dev \
-    python-lxml \
+    python3-lxml \
     libgdal-dev \
     build-essential \
-    python-dev \
+    python3-dev \
     libjpeg-dev \
     zlib1g-dev \
     libfreetype6-dev \
-    python-virtualenv
+    python3-virtualenv
 
 COPY requirements.txt /requirements.txt
 RUN pip install -r requirements.txt
@@ -48,9 +48,9 @@ RUN --mount=type=bind,source=config/patch/redis.py,target=redis.py \
     --mount=type=bind,source=config/patch/loader.py,target=loader.py \
     --mount=type=bind,source=config/patch/spec.py,target=spec.py \
     if [ "${PATCH_FILES}" = true ]; then \
-        cp redis.py /usr/local/lib/python3.7/site-packages/mapproxy/cache/redis.py; \
-        cp loader.py /usr/local/lib/python3.7/site-packages/mapproxy/config/loader.py; \
-        cp spec.py /usr/local/lib/python3.7/site-packages/mapproxy/config/spec.py; \
+        cp redis.py /usr/local/lib/python3.9/site-packages/mapproxy/cache/redis.py; \
+        cp loader.py /usr/local/lib/python3.9/site-packages/mapproxy/config/loader.py; \
+        cp spec.py /usr/local/lib/python3.9/site-packages/mapproxy/config/spec.py; \
     fi
 
 RUN chgrp -R 0 /mapproxy /settings /start.sh && \
