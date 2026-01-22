@@ -68,7 +68,7 @@
               subPath: log.ini
             {{- if eq (upper $storage.mapproxyConfigProvider) "FS" }}
             - mountPath: /configSource/mapproxy.yaml
-              name: sources-storage
+              name: internal-storage
               subPath: config/mapproxy.yaml
             {{- end }}
             {{- if $db.sslEnabled }}

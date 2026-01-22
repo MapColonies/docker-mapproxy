@@ -60,8 +60,8 @@
             name: uwsgi-config
             subPath: log.ini
           {{- if $fs.internalPvc.enabled}}
-          - mountPath: /layerSources
-            name: sources-storage
+          - name: internal-storage
+            mountPath: {{ $fs.internalPvc.mountPath }}
             subPath: {{ $fs.internalPvc.tilesSubPath }}
           {{- end }}
           ports:
