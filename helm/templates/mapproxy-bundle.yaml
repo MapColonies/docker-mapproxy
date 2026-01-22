@@ -93,7 +93,7 @@
             - key: "LOG_INI"
               path: "log.ini"
         {{- if $fs.internalPvc.enabled }}
-        - name: sources-storage
+        - name: internal-storage
           persistentVolumeClaim:
             claimName: {{ $fs.internalPvc.name }}
         {{- end }}
