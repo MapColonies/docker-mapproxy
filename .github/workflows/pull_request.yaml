@@ -22,11 +22,5 @@ jobs:
   build_docker_image:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Build Docker Image
-        uses: MapColonies/shared-workflows/actions/build-docker@build-docker-v1.1.0
-        with:
-          domain: raster
-          registry: ${{ secrets.ACR_URL }}
+      - name: Build and Push Docker image
+        uses: docker/build-push-action@v6
