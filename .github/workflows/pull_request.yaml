@@ -1,0 +1,32 @@
+name: Pull Request
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  helm-lint:
+    name: Run Helm lint Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out TS Project Git repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Helm Lint Checks
+        uses: MapColonies/shared-workflows/actions/helm-lint@helm-lint-v1
+
+  build_docker_image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        uses: MapColonies/shared-workflows/actions/build-docker@build-docker-v1.1.0
+        with:
+          domain: raster
+          registry: ${{ secrets.ACR_URL }}
