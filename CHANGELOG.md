@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.2](https://github.com/MapColonies/docker-mapproxy/compare/v1.9.1...v1.9.2) (2026-02-08)
+
+
+### Bug Fixes
+
+* parse_qs import path for python3 ([#83](https://github.com/MapColonies/docker-mapproxy/issues/83)) ([57c042e](https://github.com/MapColonies/docker-mapproxy/commit/57c042e0a64f60b7767b161721b62a5c01a255b0))
+
 ## [1.9.1](https://github.com/MapColonies/docker-mapproxy/compare/v1.9.0...v1.9.1) (2026-01-29)
 
 
