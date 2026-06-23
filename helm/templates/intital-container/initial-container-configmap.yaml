@@ -2,6 +2,7 @@
 {{- $chartName := include "mapproxy.name" . -}}
 {{- $releaseName := .Release.Name -}}
 {{- $initConfigmapName := include "init-configmap.fullname" . -}}
+{{- $configManagement := (include "common.initContainer.configManagement.merged" .) | fromYaml }}
 {{- $db := (include "common.db.merged" .) | fromYaml }}
 {{- $s3 := (include "common.s3.merged" .) | fromYaml }}
 {{- $storage := (include "common.storage.merged" .) | fromYaml }}
@@ -16,6 +17,12 @@ metadata:
     release: {{ $releaseName }}
 data:
   LOG_LEVEL: {{ .Values.initContainer.env.logLevel | quote }}
+  {{- with $configManagement }}
+  CONFIG_NAME: {{ .name | quote }}
+  CONFIG_VERSION: {{ .version | quote }}
+  CONFIG_OFFLINE_MODE: {{ .offlineMode | quote }}
+  CONFIG_SERVER_URL: {{ .serverUrl | quote }}
+  {{- end }}
   CONFIG_PROVIDER: {{ $storage.mapproxyConfigProvider }}
   S3_ENDPOINT_URL: {{ $s3.endpointUrl }}
   S3_BUCKET: {{ $s3.tilesBucket }}
