@@ -113,7 +113,7 @@ mclabels:
   partOf: serving
   owner: raster
   gisDomain: raster
-  prometheus: 
+  prometheus:
     enabled: true
     port: 9117
   logScraping: true

@@ -15,23 +15,22 @@
       app: {{ .chartName }}-{{ .type }}
       release: {{ .releaseName }}-{{ .type }}
       run: {{ .releaseName }}-{{ .chartName }}-{{ .type }}
-      {{ include "mapproxy.selectorLabels" . | nindent 6 }}
+      {{- include "mapproxy.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
         app: {{ .chartName }}-{{ .type }}
         release: {{ .releaseName }}-{{ .type }}
         run: {{ .releaseName }}-{{ .chartName }}-{{ .type }}
-        {{ include "mapproxy.labels" . | nindent 8 }}
+        {{- include "mapproxy.labels" . | nindent 8 }}
       annotations:
         {{- if .Values.resetOnConfigChange }}
-        checksum/configmap: {{
-          include (print $.Template.BasePath "/mapproxy/mapproxy-configmap.yaml") . | sha256sum }}
+        checksum/configmap: {{ include (print $.Template.BasePath "/mapproxy/mapproxy-configmap.yaml") . | sha256sum }}
         {{- end }}
         {{- if .Values.podAnnotations }}
         {{- toYaml .Values.podAnnotations | nindent 8 }}
         {{- end }}
-        {{ include "mclabels.annotations" . | nindent 8 }}
+        {{- include "mclabels.annotations" . | nindent 8 }}
     spec:
     {{- if $cloudProviderImagePullSecretName }}
       imagePullSecrets:
@@ -73,12 +72,12 @@
             items:
               - key: certFile
                 path: cert.pem
-        {{- end }}    
+        {{- end }}
         {{- if .Values.global.ca.secretName }}
         - name: root-ca
           secret:
             secretName: {{ .Values.global.ca.secretName }}
-        {{- end }}                
+        {{- end }}
         {{- if .Values.authentication.ssl.enabled }}
         - name: open-ssl
           secret:
