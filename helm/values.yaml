@@ -3,6 +3,7 @@ global:
     dockerRegistryUrl: my-registry-url.io
     imagePullSecretName: "my-registry-secret"
     flavor: openshift
+  configManagement: {}
   tracing:
     enabled: false
     url: ""
@@ -112,7 +113,7 @@ mclabels:
   partOf: serving
   owner: raster
   gisDomain: raster
-  prometheus: 
+  prometheus:
     enabled: true
     port: 9117
   logScraping: true
@@ -192,6 +193,11 @@ initContainer:
   image:
     repository: mapproxinator
     tag: "latest"
+  configManagement:
+    offlineMode: false
+    name: 'mapproxinator'
+    version: ''
+    serverUrl: ''
   env:
     logLevel: warn
     ssl:
@@ -321,6 +327,11 @@ mapproxinator:
   port: 80
   targetPort: 8081
   nodePort: 30002
+  configManagement:
+    offlineMode: false
+    name: 'mapproxinator'
+    version: ''
+    serverUrl: ''
   env:
     logLevel: warn
     poll:

@@ -4,7 +4,7 @@
 {{- $fs := (include "common.fs.merged" .) | fromYaml }}
         - name: mapproxy
           image: {{ .cloudProviderDockerRegistryUrl }}{{ .Values.mapproxy.image.repository }}:{{ .Values.mapproxy.image.tag }}
-          imagePullPolicy: {{ .Values.imagePullPolicy }} 
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
           env:
             - name: REDIS_TLS
               value: {{ .Values.mapproxy.redis.tls | quote }}
