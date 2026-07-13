@@ -2,9 +2,10 @@
 {{- $configmapName := include "configmap.fullname" . -}}
 {{- $storage := (include "common.storage.merged" .) | fromYaml }}
 {{- $fs := (include "common.fs.merged" .) | fromYaml }}
+{{- $metrics := (include "common.metrics.merged" .) | fromYaml }}
         - name: mapproxy
           image: {{ .cloudProviderDockerRegistryUrl }}{{ .Values.mapproxy.image.repository }}:{{ .Values.mapproxy.image.tag }}
-          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }} 
           env:
             - name: REDIS_TLS
               value: {{ .Values.mapproxy.redis.tls | quote }}
@@ -12,6 +13,8 @@
               value: {{ .Values.mapproxy.socket.connectionTimeoutSeconds | quote }}
             - name: SOCKET_TIMEOUT_SECONDS
               value: {{ .Values.mapproxy.socket.timeoutSeconds | quote }}
+            - name: REDIS_HEALTH_CHECK_INTERVAL
+              value: {{ .Values.mapproxy.redis.healthCheckInterval | quote }}
             {{- if .Values.global.ca.secretName }}
             - name: REQUESTS_CA_BUNDLE
               value: {{ printf "%s/%s" .Values.global.ca.path .Values.global.ca.key | quote }}
@@ -29,6 +32,24 @@
                 secretKeyRef:
                   name: {{ .s3SecretName }}
                   key: secretAccessKey
+            - name: AWS_MAX_ATTEMPTS
+              value: {{ .Values.mapproxy.s3.maxAttempts | quote }}
+            - name: AWS_RETRY_MODE
+              value: {{ .Values.mapproxy.s3.retryMode | quote }}
+            {{- end }}
+            # uWSGI tuning — picked up by entrypoint.sh
+            - name: PROCESSES
+              value: {{ .Values.mapproxy.uwsgi.processes | quote }}
+            - name: THREADS
+              value: {{ .Values.mapproxy.uwsgi.threads | quote }}
+            - name: HARAKIRI
+              value: {{ .Values.mapproxy.uwsgi.harakiri | quote }}
+            {{- if $metrics.enabled }}
+            # Stats server for uwsgi-exporter / Prometheus
+            - name: UWSGI_STATS_ENABLED
+              value: "true"
+            - name: UWSGI_STATS_PORT
+              value: {{ .Values.mapproxy.uwsgi.statsServer.stats | quote }}
             {{- end }}
           envFrom:
             - configMapRef:
@@ -72,6 +93,6 @@
             httpGet:
               path: /service?REQUEST=GetCapabilities&SERVICE=WMTS
               port: {{ .Values.mapproxy.targetPort }}
-            initialDelaySeconds: 30
+            initialDelaySeconds: 15
             timeoutSeconds: 5
 {{- end }}

@@ -1,2 +1,5 @@
-mapproxy
-configuration/cache_data
+.git
+.gitignore
+*.md
+.dockerignore
+LICENSE

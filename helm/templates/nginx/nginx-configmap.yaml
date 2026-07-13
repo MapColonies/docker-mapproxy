@@ -12,9 +12,10 @@ metadata:
     environment: {{ .Values.environment }}
     release: {{ $releaseName }}
 data:
-  default.conf: {{ tpl (.Files.Get "config/default.conf") . | quote }}
-  nginx.conf: {{ tpl (.Files.Get "config/nginx.conf") . | quote }}
   log_format.conf: {{ tpl (.Files.Get "config/log_format.conf") . | quote }}
   nginx.mapproxy.conf: {{ tpl (.Files.Get "config/nginx.mapproxy.conf") . | quote }}
   nginx.mapproxy.wmts.conf: {{ tpl (.Files.Get "config/nginx.mapproxy.wmts.conf") . | quote }}
+  mapproxy-http.conf: {{ tpl (.Files.Get "config/mapproxy-http.conf") . | quote }}
+  mapproxy-server.conf: {{ tpl (.Files.Get "config/mapproxy-server.conf") . | quote }}
+  mapproxy-location.conf: {{ tpl (.Files.Get "config/mapproxy-location.conf") . | quote }}
 {{- end }}

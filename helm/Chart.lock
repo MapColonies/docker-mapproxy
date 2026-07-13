@@ -1,14 +1,9 @@
-apiVersion: v2
-name: mapproxy
-description: A Helm chart for mapproxy service
-type: application
-version: 1.9.2
-appVersion: 1.9.2
 dependencies:
 - name: nginx
-  version: 2.2.1
   repository: oci://acrarolibotnonprod.azurecr.io/helm/common
-
+  version: 2.2.1
 - name: mclabels
-  version: 1.0.1
   repository: oci://acrarolibotnonprod.azurecr.io/helm/infra
+  version: 1.0.1
+digest: sha256:fadb019439a1cd6468211a420dfd6447e6a858a8524b325b2ff2ad52c9bb03a6
+generated: "2026-07-13T14:50:46.98009701+03:00"
