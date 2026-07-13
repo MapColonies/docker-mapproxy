@@ -46,7 +46,6 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir \
     "MapProxy==${MAPPROXY_VERSION}" \
     "uWSGI" \
-    "redis" \
     "opentelemetry-api" \
     "opentelemetry-sdk" \
     "opentelemetry-distro" \

@@ -99,7 +99,9 @@ class RedisCache(TileCacheBase):
 
         try:
             log.debug('exists_key, key: %s' % key)
-            return self.r.exists(key)
+            # exists() returns an int (0/1); convert to a real bool so callers
+            # doing `is False` checks behave correctly.
+            return bool(self.r.exists(key))
         except redis.exceptions.TimeoutError as e:
             log.error('REDIS:exists_key timeout error, returning false. %s' % e)
             return False
@@ -123,9 +125,13 @@ class RedisCache(TileCacheBase):
                 self.r.pexpire(key, int(self.ttl * 1000))
         except redis.exceptions.TimeoutError as e:
             log.error('REDIS:store_key timeout error, returning false. %s' % e)
+            # tile_buffer() set tile.stored=True; undo it so a fallback cache
+            # in a cascade still attempts to store the tile.
+            tile.stored = False
             return False
         except redis.exceptions.ConnectionError as e:
             log.error('Error during connection %s' % e)
+            tile.stored = False
             return False
 
         return r

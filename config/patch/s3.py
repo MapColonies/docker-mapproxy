@@ -67,7 +67,7 @@ class S3Cache(TileCacheBase):
     def __init__(self, base_path, file_ext, directory_layout='tms',
                  bucket_name='mapproxy', profile_name=None, region_name=None, endpoint_url=None,
                  _concurrent_writer=4, access_control_list=None, coverage=None, use_http_get=False):
-        super(S3Cache, self).__init__(coverage)
+        super().__init__(coverage)
         md5 = hashlib.new('md5', base_path.encode('utf-8') + bucket_name.encode('utf-8'), usedforsecurity=False)
         self.lock_cache_id = md5.hexdigest()
         self.bucket_name = bucket_name
@@ -134,7 +134,10 @@ class S3Cache(TileCacheBase):
             tile.timestamp = calendar.timegm(response['LastModified'].timetuple())
         elif 'Last-Modified' in response:
             from email.utils import parsedate_to_datetime
-            tile.timestamp = calendar.timegm(parsedate_to_datetime(response['Last-Modified']).timetuple())
+            # utctimetuple() normalizes tz-aware datetimes to UTC before
+            # calendar.timegm (which assumes UTC); timetuple() would drop the
+            # offset and skew timestamps for non-GMT Last-Modified headers.
+            tile.timestamp = calendar.timegm(parsedate_to_datetime(response['Last-Modified']).utctimetuple())
 
         if 'ContentLength' in response:
             tile.size = int(response['ContentLength'])
@@ -155,7 +158,7 @@ class S3Cache(TileCacheBase):
                         return False
                     if response.status != 200:
                         log.error('S3: is_cached HTTP error, url: %s, status: %s' % (url, response.status))
-                        raise Exception('S3 HTTP error %s for url: %s' % (response.status, url))
+                        raise S3ConnectionError('S3 HTTP error %s for url: %s' % (response.status, url))
                     self._set_metadata(response.headers, tile)
                 except urllib3.exceptions.HTTPError as e:
                     log.error('S3: is_cached request error, url: %s, error: %s' % (url, e))
@@ -192,7 +195,7 @@ class S3Cache(TileCacheBase):
                     return False
                 if response.status != 200:
                     log.error('S3: load_tile HTTP error, url: %s, status: %s' % (url, response.status))
-                    raise Exception('S3 HTTP error %s for url: %s' % (response.status, url))
+                    raise S3ConnectionError('S3 HTTP error %s for url: %s' % (response.status, url))
                 tile.source = ImageSource(io.BytesIO(response.data))
             except urllib3.exceptions.HTTPError as e:
                 log.error('S3: load_tile request error, url: %s, error: %s' % (url, e))
