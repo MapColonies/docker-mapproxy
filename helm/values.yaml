@@ -3,7 +3,6 @@ global:
     dockerRegistryUrl: my-registry-url.io
     imagePullSecretName: "my-registry-secret"
     flavor: openshift
-  configManagement: {}
   tracing:
     enabled: false
     url: ""
@@ -31,6 +30,7 @@ global:
       tilesBucket: ""
       sslEnabled: false
       secretName: ""
+      username: ""
   db:
     host: ""
     name: ""
@@ -66,6 +66,7 @@ storage:
     tilesBucket: ""
     sslEnabled: false
     secretName: ""
+    username: ""
 
 db:
   host: ""
@@ -125,6 +126,11 @@ mapproxy:
     timeoutSeconds: 0.1 # Set a operation timeout nonnegative, floating point number expressing *seconds*.
   redis:
     tls: false
+    healthCheckInterval: 0
+    sslCertReqs: "optional" # 'required'/'optional'/'none'
+  s3:
+    maxAttempts: 1
+    retryMode: standard
   wms:
     enabled: false
     replicaCount: 1
@@ -164,6 +170,7 @@ mapproxy:
     httpSocket: 8080
     processes: 6
     threads: 10
+    harakiri: 120 # max seconds a worker may spend on a single request
     disableLogging: true
     timeoutSeconds: 8
     statsServer:
@@ -175,7 +182,20 @@ mapproxy:
       enabled: true
       allowedOrigin: "*"
       allowedHeaders: "x-api-key"
-    ssl: # external paths
+      allowedMethods: "GET,OPTIONS"
+    telemetry:
+      traceDebug: false # set true locally to enable ConsoleSpanExporter
+      boto:
+        enabled: false
+        captureHeaders: false
+      http:
+        enabled: true
+      sql:
+        enabled: false
+      tileCache:
+        enabled: false
+    ssl:
+      # external paths
       CA_DIR: /opt/certs/ca/
       KEY_DIR: /opt/certs/key/
       CERT_DIR: /opt/certs/cert/
@@ -193,11 +213,6 @@ initContainer:
   image:
     repository: mapproxinator
     tag: "latest"
-  configManagement:
-    offlineMode: false
-    name: 'mapproxinator'
-    version: ''
-    serverUrl: ''
   env:
     logLevel: warn
     ssl:
@@ -219,11 +234,15 @@ initContainer:
 
 nginx:
   enabled: true
+  # Declared explicitly so the workload's `app` label / selector / resource
+  # names are specific to this service (app: nginx-mapproxy) rather than the
+  # chart's generic default of `nginx` introduced in 2.2.1. See docs/adr.
+  nameOverride: mapproxy-nginx
   fullnameOverride: ""
   replicaCount: 1
   image:
-    repository: nginx
-    tag: "latest"
+    repository: common/nginx
+    tag: "v2.2.1"
   volume:
     storage: 1000Mi
     accessModes: ReadWriteOnce
@@ -238,11 +257,25 @@ nginx:
     expirationTime: 60m
     useTempPath: "off"
 
+  nginx:
+    extensions:
+      server:
+        enabled: true
+        fileName: mapproxy-server.conf
+      location:
+        enabled: true
+        fileName: mapproxy-location.conf
+
   port: 8080
   internalServicePort: 80
   nginxTargetPort: 8080
   targetPort: 8080
   nodePort: 30003
+
+  # The root location is handled by uwsgi_pass from mapproxy-location.conf,
+  # so the chart's built-in proxy_pass backend must stay off.
+  backend:
+    enabled: false
 
   authorization:
     enabled: false
@@ -256,42 +289,46 @@ nginx:
       domain: "raster"
 
   extraVolumes:
-    - name: nginx-config
-      configMap:
-        name: "{{ .Release.Name }}-nginx-configmap"
-    - name: cache #TODO: Find solution to mount cache volume with condition
-      emptyDir:
-        sizeLimit: "{{ .Values.volume.storage }}"
-        medium: "Memory"
+  - name: nginx-config
+    configMap:
+      # must match nginx-configmap.fullname (<release>-<chart>-nginx-configmap);
+      # tpl runs in the nginx subchart context, so the chart name is spelled out
+      name: "{{ .Release.Name }}-mapproxy-nginx-configmap"
+  - name: cache #TODO: Find solution to mount cache volume with condition
+    emptyDir:
+      sizeLimit: "{{ .Values.volume.storage }}"
+      medium: "Memory"
 
   extraVolumeMounts:
-    - name: nginx-config
-      mountPath: "/etc/nginx/conf.d/default.conf"
-      subPath: default.conf
-    - name: nginx-config
-      mountPath: "/etc/nginx/nginx.conf"
-      subPath: nginx.conf
-    - name: nginx-config
-      mountPath: "/etc/nginx/log_format.conf"
-      subPath: log_format.conf
-    - name: nginx-config
-      mountPath: "/etc/nginx/nginx.mapproxy.conf"
-      subPath: nginx.mapproxy.conf
-    - name: nginx-config
-      mountPath: "/etc/nginx/nginx.mapproxy.wmts.conf"
-      subPath: nginx.mapproxy.wmts.conf
-    - name: cache
-      mountPath: "/cache"
+  - name: nginx-config
+    mountPath: "/etc/nginx/log_format.conf"
+    subPath: log_format.conf
+  - name: nginx-config
+    mountPath: "/etc/nginx/nginx.mapproxy.conf"
+    subPath: nginx.mapproxy.conf
+  - name: nginx-config
+    mountPath: "/etc/nginx/nginx.mapproxy.wmts.conf"
+    subPath: nginx.mapproxy.wmts.conf
+  - name: nginx-config
+    mountPath: "/etc/nginx/conf.d/mapproxy-http.conf"
+    subPath: mapproxy-http.conf
+  - name: nginx-config
+    mountPath: "/etc/nginx/conf.d/extensions/mapproxy-server.conf"
+    subPath: mapproxy-server.conf
+  - name: nginx-config
+    mountPath: "/etc/nginx/conf.d/extensions/mapproxy-location.conf"
+    subPath: mapproxy-location.conf
+  - name: cache
+    mountPath: "/cache"
 
   route:
     enabled: true
     routesMapping:
-      - host:
-        path: /api/raster/v1
+    - host:
+      path: /api/raster/v1
     timeout:
       enabled: false # defaults to 30s by openshift
       duration: 60s # supported units (us, ms, s, m, h, d)
-    rewriteTarget: ""
     tls:
       enabled: true
       useCerts: false
@@ -318,6 +355,37 @@ nginx:
         cpu: 100m
         memory: 128Mi
 
+  opentelemetry:
+    serviceName: mapproxy-nginx
+    exporterHost: ""
+    exporterPort: 4317
+    samplerMethod: "AlwaysOff"
+    ratio: 10
+
+  mclabels:
+    environment: development
+    owner: raster
+    partOf: serving
+    component: proxy-server
+    prometheus:
+      enabled: true
+      port: 9113
+    logScraping: true
+
+  prometheusExporter:
+    enabled: false
+    # image intentionally not overridden — inherits the chart default
+    # (common/nginx-prometheus-exporter:1.5.1) as of nginx chart 2.2.1.
+    resources:
+      enabled: true
+      value:
+        limits:
+          cpu: 100m
+          memory: 128Mi
+        requests:
+          cpu: 100m
+          memory: 128Mi
+
 mapproxinator:
   enabled: true
   replicaCount: 1
@@ -327,11 +395,6 @@ mapproxinator:
   port: 80
   targetPort: 8081
   nodePort: 30002
-  configManagement:
-    offlineMode: false
-    name: 'mapproxinator'
-    version: ''
-    serverUrl: ''
   env:
     logLevel: warn
     poll:
@@ -340,7 +403,8 @@ mapproxinator:
     logPrettyPrintEnabled: false
     responseCompressionEnabled: true
     requestPayloadLimit: 1mb
-    ssl: # external paths
+    ssl:
+      # external paths
       CA_DIR: /opt/certs/ca/
       KEY_DIR: /opt/certs/key/
       CERT_DIR: /opt/certs/cert/

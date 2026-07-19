@@ -1,9 +1,5 @@
-name: Pull Request
-
-on:
-  pull_request:
-    branches:
-      - master
+name: pull_request
+on: [ pull_request ]
 
 jobs:
   helm-lint:
@@ -11,16 +7,66 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out TS Project Git repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
+    - name: Check out TS Project Git repository
+      uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
 
-      - name: Helm Lint Checks
-        uses: MapColonies/shared-workflows/actions/helm-lint@helm-lint-v1
+    - name: Helm Lint Checks
+      uses: MapColonies/shared-workflows/actions/helm-lint@helm-lint-v1
+
+  openapi-lint:
+    name: Run OpenAPI lint Check
+    if: false
+    runs-on: ubuntu-latest
+
+    strategy: &node-strategy
+      matrix:
+        node: [ 24.x ]
+
+    steps:
+    - name: Check out TS Project Git repository
+      uses: actions/checkout@v7
+
+    - name: Init Nodejs
+      uses: MapColonies/shared-workflows/actions/init-npm@init-npm-v1
+      with:
+        node-version: ${{ matrix.node }}
+
+    - name: Copy Schema
+      run: npm run copySchema
+
+    - name: Lint OpenAPI
+      run: npx @redocly/cli lint --format=github-actions ./openapi3.yaml
+
+  tests:
+    name: Run Tests
+    if: false
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node: [ 24.x ]
+
+    steps:
+    - name: Check out TS Project Git repository
+      uses: actions/checkout@v7
+
+    - name: Init Nodejs
+      uses: MapColonies/shared-workflows/actions/init-npm@init-npm-v1
+      with:
+        node-version: ${{ matrix.node }}
+
+    - name: Run tests
+      run: npm run test
+
+    - uses: actions/upload-artifact@v7
+      with:
+        name: Test Reporters ${{ matrix.node }}
+        path: ./reports/**
 
   build_docker_image:
     runs-on: ubuntu-latest
     steps:
-      - name: Build and Push Docker image
-        uses: docker/build-push-action@v6
+    - name: Build and Push Docker image
+      uses: docker/build-push-action@v7
