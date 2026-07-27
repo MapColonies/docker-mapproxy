@@ -1,6 +1,13 @@
 """
 MapProxy WSGI application wrapped with OpenTelemetry instrumentation.
 
+Load order matters here.  The OTel providers own gRPC channels that are not
+fork-safe, so they are built by _init_telemetry() in the worker rather than at
+import time.  Instrumentation is installed at import against ProxyTracers that
+resolve when that call lands.  The dispatch block at the bottom of this module
+picks the right moment for both lazy-app settings; read it before moving
+anything across that boundary.
+
 Override the behaviour with environment variables:
   OTEL_SERVICE_NAME                        - service name reported to the collector
   TELEMETRY_TRACING_ENDPOINT              - OTLP gRPC collector endpoint
@@ -36,6 +43,7 @@ from opentelemetry.instrumentation.sqlite3 import SQLite3Instrumentor
 # crashes the whole app at worker startup.
 from mapproxy.wsgiapp import make_wsgi_app
 
+import atexit
 import os
 import socket
 import logging
@@ -113,63 +121,130 @@ def _probe_collector(endpoint: str) -> None:
             endpoint, type(exc).__name__, exc,
         )
 
-_probe_collector(_OTLP_ENDPOINT)
-
 # ── Resource ──────────────────────────────────────────────────────────────────
 resource = Resource.create({
     "service.name":    os.getenv("OTEL_SERVICE_NAME", "mapproxy"),
     "service.version": _SERVICE_VERSION,
 })
 
-# ── Tracing ───────────────────────────────────────────────────────────────────
-# Sample 1-in-N requests (default 1/10 = 10%) — tune via TELEMETRY_TRACING_SAMPLING_RATIO_DENOMINATOR.
-# OTLPSpanExporter (gRPC) requires a bare host:port — strip http:// and set
-# insecure=True explicitly, otherwise the channel defaults to TLS and the
-# handshake fails silently against a plaintext collector endpoint.
-try:
-    _grpc_endpoint = _OTLP_ENDPOINT.replace("https://", "").replace("http://", "").rstrip("/")
-    _otel_log.info("[otel-trace] gRPC endpoint: %s  insecure=True  sampling=1/%s",
-                   _grpc_endpoint, _SAMPLE_DENOM)
-    tracer_provider = TracerProvider(
-        resource=resource,
-        sampler=TraceIdRatioBased(1 / _SAMPLE_DENOM) if _TRACING_ENABLED else TraceIdRatioBased(0),
-    )
-    tracer_provider.add_span_processor(
-        BatchSpanProcessor(
-            OTLPSpanExporter(endpoint=_grpc_endpoint, insecure=True),
-            max_export_batch_size=512,
-            export_timeout_millis=10_000,
-        )
-    )
-    # OTEL_TRACE_DEBUG=true → also print every span to stdout so you can
-    # confirm spans are being created independently of collector connectivity.
-    if _TRACE_DEBUG:
-        _otel_log.warning("[otel-trace] OTEL_TRACE_DEBUG=true — ConsoleSpanExporter active (not for production)")
-        tracer_provider.add_span_processor(SimpleSpanProcessor(ConsoleSpanExporter()))
-    trace.set_tracer_provider(tracer_provider)
-    _otel_log.info("[otel-trace] TracerProvider ready")
-except Exception:
-    _otel_log.exception("[otel-trace] FAILED to initialise — tracing disabled")
-    tracer_provider = TracerProvider(resource=resource, sampler=TraceIdRatioBased(0))
-    trace.set_tracer_provider(tracer_provider)
+# ── Telemetry providers ───────────────────────────────────────────────────────
+# Populated by _init_telemetry(), which MUST run post-fork.  See the dispatch
+# block at the bottom of this module for how that is arranged.
+#
+# Nothing at import scope may call trace.set_tracer_provider() /
+# metrics.set_meter_provider().  Until the first such call the OTel API hands
+# out ProxyTracer / proxy-instrument objects that resolve lazily on first use,
+# and that indirection is what lets the instrumentors below be installed
+# pre-fork while the providers they end up using are built per worker.  The
+# first set-provider call wins and later ones are a no-op, so a master-side
+# call would permanently bind every proxy to the master's provider — including
+# its fork-unsafe gRPC channels — defeating the arrangement below.
+tracer_provider = None
+meter_provider  = None
 
-# ── Metrics ───────────────────────────────────────────────────────────────────
-try:
-    _grpc_endpoint = _OTLP_ENDPOINT.replace("https://", "").replace("http://", "").rstrip("/")
-    meter_provider = MeterProvider(
-        resource=resource,
-        metric_readers=[
-            PeriodicExportingMetricReader(
-                OTLPMetricExporter(endpoint=_grpc_endpoint, insecure=True),
-                export_interval_millis=60_000,
+
+def _shutdown_telemetry() -> None:
+    """Flush both providers so the final batch is exported before we exit.
+
+    Workers recycle often (max-requests, reload-on-rss).  Without this the spans
+    and metrics still sitting in the BatchSpanProcessor / PeriodicExporting-
+    MetricReader queues are discarded on every recycle.
+    """
+    if tracer_provider is not None:
+        try:
+            tracer_provider.shutdown()
+            _otel_log.info("[otel-trace] TracerProvider shut down — final batch flushed")
+        except Exception:
+            _otel_log.exception("[otel-trace] TracerProvider shutdown FAILED — spans may be lost")
+    if meter_provider is not None:
+        try:
+            meter_provider.shutdown()
+            _otel_log.info("[otel-metrics] MeterProvider shut down — final batch flushed")
+        except Exception:
+            _otel_log.exception("[otel-metrics] MeterProvider shutdown FAILED — metrics may be lost")
+
+
+def _init_telemetry() -> None:
+    """Build the providers, their gRPC exporters, and the export threads.
+
+    Runs post-fork.  Two reasons, in order of weight:
+
+    1. The OTLP exporters hold gRPC channels, and grpc-python does not support
+       forking with live channels.  The SDK's at-fork handling restarts export
+       threads but does NOT rebuild those channels, so this is not covered.
+    2. It avoids depending on private SDK internals for correctness — that
+       machinery has already moved between versions (see below).
+
+    Do NOT reintroduce the claim that a master-built provider loses its export
+    threads on fork.  Verified against the SDK pinned in this image (1.44.0):
+    BatchSpanProcessor delegates to BatchProcessor in
+    opentelemetry.sdk._shared_internal, which registers an os.register_at_fork
+    handler that restarts the export thread in the child;
+    PeriodicExportingMetricReader registers one as well.  A span emitted in a
+    forked child was exported with no force_flush.  Note the module: in SDK
+    1.7.1 that handler lived in opentelemetry.sdk.trace.export, which is why
+    grepping the old location reports zero and looks like it is missing.
+
+    Calling this resolves every ProxyTracer handed out at import time.
+    """
+    global tracer_provider, meter_provider
+
+    _probe_collector(_OTLP_ENDPOINT)
+
+    # ── Tracing ───────────────────────────────────────────────────────────────
+    # Sample 1-in-N requests — tune via TELEMETRY_TRACING_SAMPLING_RATIO_DENOMINATOR.
+    # OTLPSpanExporter (gRPC) requires a bare host:port — strip http:// and set
+    # insecure=True explicitly, otherwise the channel defaults to TLS and the
+    # handshake fails silently against a plaintext collector endpoint.
+    try:
+        _grpc_endpoint = _OTLP_ENDPOINT.replace("https://", "").replace("http://", "").rstrip("/")
+        _otel_log.info("[otel-trace] gRPC endpoint: %s  insecure=True  sampling=1/%s",
+                       _grpc_endpoint, _SAMPLE_DENOM)
+        tracer_provider = TracerProvider(
+            resource=resource,
+            sampler=TraceIdRatioBased(1 / _SAMPLE_DENOM) if _TRACING_ENABLED else TraceIdRatioBased(0),
+        )
+        tracer_provider.add_span_processor(
+            BatchSpanProcessor(
+                OTLPSpanExporter(endpoint=_grpc_endpoint, insecure=True),
+                max_export_batch_size=512,
+                export_timeout_millis=10_000,
             )
-        ],
-    )
-    metrics.set_meter_provider(meter_provider)
-    _otel_log.info("[otel-metrics] MeterProvider ready → %s", _grpc_endpoint)
-except Exception:
-    _otel_log.exception("[otel-metrics] FAILED to initialise — metrics disabled")
-    metrics.set_meter_provider(MeterProvider(resource=resource))
+        )
+        # OTEL_TRACE_DEBUG=true → also print every span to stdout so you can
+        # confirm spans are being created independently of collector connectivity.
+        if _TRACE_DEBUG:
+            _otel_log.warning("[otel-trace] OTEL_TRACE_DEBUG=true — ConsoleSpanExporter active (not for production)")
+            tracer_provider.add_span_processor(SimpleSpanProcessor(ConsoleSpanExporter()))
+        trace.set_tracer_provider(tracer_provider)
+        _otel_log.info("[otel-trace] TracerProvider ready")
+    except Exception:
+        _otel_log.exception("[otel-trace] FAILED to initialise — tracing disabled")
+        tracer_provider = TracerProvider(resource=resource, sampler=TraceIdRatioBased(0))
+        trace.set_tracer_provider(tracer_provider)
+
+    # ── Metrics ───────────────────────────────────────────────────────────────
+    try:
+        _grpc_endpoint = _OTLP_ENDPOINT.replace("https://", "").replace("http://", "").rstrip("/")
+        meter_provider = MeterProvider(
+            resource=resource,
+            metric_readers=[
+                PeriodicExportingMetricReader(
+                    OTLPMetricExporter(endpoint=_grpc_endpoint, insecure=True),
+                    export_interval_millis=60_000,
+                )
+            ],
+        )
+        metrics.set_meter_provider(meter_provider)
+        _otel_log.info("[otel-metrics] MeterProvider ready → %s", _grpc_endpoint)
+    except Exception:
+        _otel_log.exception("[otel-metrics] FAILED to initialise — metrics disabled")
+        meter_provider = MeterProvider(resource=resource)
+        metrics.set_meter_provider(meter_provider)
+
+    # Registered here rather than at import scope so it only ever runs in a
+    # process that actually owns providers.
+    atexit.register(_shutdown_telemetry)
 
 # ── Redis instrumentation ────────────────────────────────────────────────────────────
 # request_hook enriches every Redis span with the command name and the first
@@ -184,7 +259,6 @@ def _redis_request_hook(span, instance, args, kwargs):
 
 try:
     RedisInstrumentor().instrument(
-        tracer_provider=tracer_provider,
         request_hook=_redis_request_hook,
     )
     _otel_log.info("[otel-redis] RedisInstrumentor active (command+key hooks enabled)")
@@ -199,14 +273,13 @@ except Exception:
 # Disable all three with TELEMETRY_SQL_ENABLED=false.
 if _SQL_ENABLED:
     try:
-        SQLite3Instrumentor().instrument(tracer_provider=tracer_provider)
+        SQLite3Instrumentor().instrument()
         _otel_log.info("[otel-sql] SQLite3Instrumentor active")
     except Exception:
         _otel_log.exception("[otel-sql] SQLite3Instrumentor FAILED to initialise")
     try:
         from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
         SQLAlchemyInstrumentor().instrument(
-            tracer_provider=tracer_provider,
             enable_commenter=True,
             commenter_options={},
         )
@@ -216,7 +289,6 @@ if _SQL_ENABLED:
     try:
         from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
         Psycopg2Instrumentor().instrument(
-            tracer_provider=tracer_provider,
             skip_dep_check=True,
             enable_commenter=True,
         )
@@ -279,7 +351,6 @@ if _BOTO_ENABLED:
     try:
         from opentelemetry.instrumentation.botocore import BotocoreInstrumentor
         BotocoreInstrumentor().instrument(
-            tracer_provider=tracer_provider,
             request_hook=_boto_request_hook,
             response_hook=_boto_response_hook,
         )
@@ -298,8 +369,8 @@ if _HTTP_ENABLED:
     try:
         from opentelemetry.instrumentation.requests import RequestsInstrumentor
         from opentelemetry.instrumentation.urllib3 import URLLib3Instrumentor
-        RequestsInstrumentor().instrument(tracer_provider=tracer_provider)
-        URLLib3Instrumentor().instrument(tracer_provider=tracer_provider)
+        RequestsInstrumentor().instrument()
+        URLLib3Instrumentor().instrument()
         _otel_log.info("[otel-http] RequestsInstrumentor + URLLib3Instrumentor active")
     except Exception:
         _otel_log.exception("[otel-http] HTTP instrumentors FAILED to initialise")
@@ -324,6 +395,8 @@ LoggingInstrumentor().instrument()
 if _TILE_CACHE_TRACING:
     try:
         from mapproxy.cache.file import FileCache as _FileCache
+        # Runs at import, i.e. possibly pre-fork, so this is a ProxyTracer that
+        # resolves once _init_telemetry() sets the real provider in the worker.
         _tile_tracer = trace.get_tracer("mapproxy.cache.file")
         _orig_load_tile  = _FileCache.load_tile
         _orig_load_tiles = _FileCache.load_tiles
@@ -426,3 +499,35 @@ if os.getenv("CORS_ENABLED", "false").lower() == "true":
             return start_response(status, filtered, exc_info)
 
         return _inner(environ, _start_response)
+
+# ── Telemetry initialisation (must land post-fork) ────────────────────────────
+# Everything above this point is fork-safe: instrumentors hold ProxyTracers, the
+# FileCache patch is plain attribute assignment, and make_wsgi_app() builds an
+# object graph that copies cleanly.  The providers are not fork-safe, so where
+# _init_telemetry() runs depends on which process imported this module:
+#
+#   lazy-app = false → imported by the master, pre-fork.  Defer to the postfork
+#                      hook so each worker builds its own export threads.
+#   lazy-app = true  → imported by the worker, i.e. after the fork already
+#                      happened.  A postfork hook would register too late and
+#                      never fire, so initialise immediately instead.
+#   no uWSGI         → dev server or docker-compose.  Initialise immediately.
+#
+# The worker_id() check is what makes this module correct under either lazy-app
+# setting rather than only the one currently configured.
+try:
+    import uwsgi
+    from uwsgidecorators import postfork
+except ImportError:
+    _otel_log.info("[otel] not running under uWSGI — initialising telemetry eagerly")
+    _init_telemetry()
+else:
+    _worker_id = uwsgi.worker_id()
+    if _worker_id > 0:
+        _otel_log.info("[otel] imported inside worker %s (lazy-app=true) — "
+                       "fork already happened, initialising telemetry now", _worker_id)
+        _init_telemetry()
+    else:
+        postfork(_init_telemetry)
+        _otel_log.info("[otel] imported in uWSGI master (lazy-app=false) — "
+                       "telemetry deferred to postfork hook")

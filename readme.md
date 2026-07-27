@@ -271,7 +271,20 @@ docker compose up -d
 
 Every inbound HTTP request is wrapped in a span by `OpenTelemetryMiddleware` (outermost layer, inside CORS). Spans are exported in OTLP gRPC format to `OTEL_EXPORTER_OTLP_ENDPOINT`.
 
-The `BatchSpanProcessor` is initialised **after** uWSGI forks workers (`--lazy-app`). This is required — initialising the processor in the master process causes its background export thread to die silently on fork.
+The providers are built **after** uWSGI forks workers, via a `postfork` hook. `app.py` installs instrumentation at import time against `ProxyTracer` objects and builds the providers per worker, resolving those proxies at that point. The dispatch block at the bottom of `app.py` detects which process imported the module (`uwsgi.worker_id()`) and initialises at the right moment, so telemetry works under either `lazy-app` setting and outside uWSGI entirely.
+
+Why per-worker rather than in the master:
+
+- **The exporters' gRPC channels are not fork-safe.** grpc-python does not support forking with live channels. This is the binding constraint — the SDK's at-fork handling restarts export threads but does *not* rebuild an inherited channel.
+- **It avoids depending on private SDK internals.** The at-fork machinery has already moved between versions, so relying on it for correctness is fragile even where it works.
+
+> **Correction.** Earlier revisions of this document claimed a master-initialised `BatchSpanProcessor` has its export thread "die silently on fork". That is **not** accurate. Verified against the SDK pinned in this image (1.44.0): `BatchSpanProcessor` delegates to `BatchProcessor` in `opentelemetry.sdk._shared_internal`, which registers an `os.register_at_fork` handler that restarts the export thread in the child — a span emitted in a forked child was exported with no `force_flush`. `PeriodicExportingMetricReader` is protected the same way, and proxy metric instruments (`_ProxyHistogram`) were confirmed to resolve post-fork too.
+>
+> Beware when checking this yourself: in SDK 1.7.1 the handler lived in `opentelemetry.sdk.trace.export`, so grepping that module on a current SDK reports zero and makes the protection look absent.
+>
+> The reasons to build post-fork are the two above, not export-thread death.
+
+Both providers are flushed via an `atexit` handler so the final batch is exported when a worker recycles.
 
 The gRPC channel uses a **bare `host:port`** with `insecure=True`. Passing an `http://` or `https://` prefix causes silent TLS negotiation failure.
 
@@ -345,7 +358,7 @@ The container starts uWSGI with the following fixed flags (not configurable at r
 | `--socket 0.0.0.0:3031`      | uwsgi binary protocol — use as nginx upstream                          |
 | `--http-socket 0.0.0.0:8080` | plain HTTP — use for liveness probes and direct access                 |
 | `--master`                   | master process manages workers                                         |
-| `--lazy-app`                 | workers load `app.py` **after** fork — required for OTel thread safety |
+| `--lazy-app`                 | workers load `app.py` **after** fork — telemetry initialises per worker via the dispatch in `app.py` |
 | `--harakiri 120`             | kill workers that take > 120 s                                         |
 | `--max-requests 1000`        | recycle worker after 1000 requests                                     |
 | `--reload-on-rss 2048`       | recycle worker if RSS exceeds 2 GB                                     |
