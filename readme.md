@@ -370,7 +370,7 @@ The container starts uWSGI with the following fixed flags (not configurable at r
 | `--socket 0.0.0.0:3031`      | uwsgi binary protocol — use as nginx upstream                          |
 | `--http-socket 0.0.0.0:8080` | plain HTTP — use for liveness probes and direct access                 |
 | `--master`                   | master process manages workers                                         |
-| `--lazy-app`                 | workers load `app.py` **after** fork — telemetry initialises per worker via the dispatch in `app.py` |
+| `lazy-app = false`           | master loads `app.py` once, then forks — workers share the parsed config copy-on-write |
 | `--harakiri 120`             | kill workers that take > 120 s                                         |
 | `--max-requests 1000`        | recycle worker after 1000 requests                                     |
 | `--reload-on-rss 2048`       | recycle worker if RSS exceeds 2 GB                                     |
