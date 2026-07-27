@@ -149,6 +149,14 @@ def _shutdown_telemetry() -> None:
     Workers recycle often (max-requests, reload-on-rss).  Without this the spans
     and metrics still sitting in the BatchSpanProcessor / PeriodicExporting-
     MetricReader queues are discarded on every recycle.
+
+    Registered via atexit, which under uWSGI is BEST-EFFORT ONLY.  The python
+    plugin returns from uwsgi_python_atexit() without reaching Py_Finalize() --
+    so without running any atexit handler -- if the worker is hijacked, is still
+    busy in a request, or is running async.  Recycles that land while a sibling
+    thread is mid-request therefore still drop the queue.  SIGKILL paths
+    (harakiri, worker-reload-mercy expiry) skip it outright.  Do not treat this
+    as a guarantee; a uWSGI-level shutdown hook would be needed for that.
     """
     if tracer_provider is not None:
         try:
@@ -515,9 +523,15 @@ if os.getenv("CORS_ENABLED", "false").lower() == "true":
 #
 # The worker_id() check is what makes this module correct under either lazy-app
 # setting rather than only the one currently configured.
+#
+# uwsgidecorators is imported only on the branch that actually needs it.  It does
+# more than expose decorators at import time: it raises a bare Exception (NOT an
+# ImportError) when the master process is disabled, so importing it up front
+# would take down every uWSGI run without `master = true` — and `need-app = true`
+# turns that into a refusal to boot.  Hence the narrow placement and the broad
+# except.
 try:
     import uwsgi
-    from uwsgidecorators import postfork
 except ImportError:
     _otel_log.info("[otel] not running under uWSGI — initialising telemetry eagerly")
     _init_telemetry()
@@ -528,6 +542,16 @@ else:
                        "fork already happened, initialising telemetry now", _worker_id)
         _init_telemetry()
     else:
-        postfork(_init_telemetry)
-        _otel_log.info("[otel] imported in uWSGI master (lazy-app=false) — "
-                       "telemetry deferred to postfork hook")
+        try:
+            from uwsgidecorators import postfork
+        except Exception:
+            # No master process, so there is no fork to hook and nothing will
+            # register the providers later.  Initialise now rather than boot a
+            # worker with telemetry silently absent.
+            _otel_log.warning("[otel] uwsgidecorators unavailable (uWSGI master "
+                              "disabled?) — initialising telemetry eagerly")
+            _init_telemetry()
+        else:
+            postfork(_init_telemetry)
+            _otel_log.info("[otel] imported in uWSGI master (lazy-app=false) — "
+                           "telemetry deferred to postfork hook")

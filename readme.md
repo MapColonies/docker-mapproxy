@@ -271,7 +271,17 @@ docker compose up -d
 
 Every inbound HTTP request is wrapped in a span by `OpenTelemetryMiddleware` (outermost layer, inside CORS). Spans are exported in OTLP gRPC format to `OTEL_EXPORTER_OTLP_ENDPOINT`.
 
-The providers are built **after** uWSGI forks workers, via a `postfork` hook. `app.py` installs instrumentation at import time against `ProxyTracer` objects and builds the providers per worker, resolving those proxies at that point. The dispatch block at the bottom of `app.py` detects which process imported the module (`uwsgi.worker_id()`) and initialises at the right moment, so telemetry works under either `lazy-app` setting and outside uWSGI entirely.
+The providers are always built **per worker, after the fork** — never in the uWSGI master. `app.py` installs instrumentation at import time against `ProxyTracer` objects, which resolve once a real provider is set.
+
+*When* that happens is decided by the dispatch block at the bottom of `app.py`, from `uwsgi.worker_id()`:
+
+| Import context | Behaviour |
+| --- | --- |
+| uWSGI worker — `lazy-app = true` | initialise immediately; the fork already happened |
+| uWSGI master — `lazy-app = false` | defer to a `postfork` hook |
+| no uWSGI (compose, tests) | initialise immediately |
+
+So the module is correct under either `lazy-app` setting and outside uWSGI entirely. Check `helm/config/mapProxyUwsgi.ini` for which path a given deployment actually takes.
 
 Why per-worker rather than in the master:
 
@@ -284,7 +294,9 @@ Why per-worker rather than in the master:
 >
 > The reasons to build post-fork are the two above, not export-thread death.
 
-Both providers are flushed via an `atexit` handler so the final batch is exported when a worker recycles.
+Both providers are flushed via an `atexit` handler, so the final batch is exported on a clean interpreter shutdown.
+
+> **This is best-effort, not a guarantee.** uWSGI's python plugin skips `Py_Finalize()` — and therefore every Python `atexit` handler — when the worker is hijacked, when the worker is still busy serving a request, or when running in async mode. A `max-requests` or `reload-on-rss` recycle that lands while a sibling thread is mid-request will drop whatever is still queued, exactly as before this handler existed. Harakiri kills and `worker-reload-mercy` expiry (`SIGKILL`) bypass it too. Deterministic flushing on recycle would need a uWSGI-level shutdown hook rather than Python `atexit`.
 
 The gRPC channel uses a **bare `host:port`** with `insecure=True`. Passing an `http://` or `https://` prefix causes silent TLS negotiation failure.
 
