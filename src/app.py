@@ -208,11 +208,11 @@ def _init_telemetry() -> None:
         _grpc_endpoint = _OTLP_ENDPOINT.replace("https://", "").replace("http://", "").rstrip("/")
         _otel_log.info("[otel-trace] gRPC endpoint: %s  insecure=True  sampling=1/%s",
                        _grpc_endpoint, _SAMPLE_DENOM)
-        tracer_provider = TracerProvider(
+        _provider = TracerProvider(
             resource=resource,
             sampler=TraceIdRatioBased(1 / _SAMPLE_DENOM) if _TRACING_ENABLED else TraceIdRatioBased(0),
         )
-        tracer_provider.add_span_processor(
+        _provider.add_span_processor(
             BatchSpanProcessor(
                 OTLPSpanExporter(endpoint=_grpc_endpoint, insecure=True),
                 max_export_batch_size=512,
@@ -223,18 +223,32 @@ def _init_telemetry() -> None:
         # confirm spans are being created independently of collector connectivity.
         if _TRACE_DEBUG:
             _otel_log.warning("[otel-trace] OTEL_TRACE_DEBUG=true — ConsoleSpanExporter active (not for production)")
-            tracer_provider.add_span_processor(SimpleSpanProcessor(ConsoleSpanExporter()))
-        trace.set_tracer_provider(tracer_provider)
+            _provider.add_span_processor(SimpleSpanProcessor(ConsoleSpanExporter()))
+        trace.set_tracer_provider(_provider)
         _otel_log.info("[otel-trace] TracerProvider ready")
     except Exception:
         _otel_log.exception("[otel-trace] FAILED to initialise — tracing disabled")
-        tracer_provider = TracerProvider(resource=resource, sampler=TraceIdRatioBased(0))
-        trace.set_tracer_provider(tracer_provider)
+        try:
+            trace.set_tracer_provider(TracerProvider(resource=resource, sampler=TraceIdRatioBased(0)))
+        except Exception:
+            _otel_log.exception("[otel-trace] fallback provider also FAILED")
+    finally:
+        # Bind the global to what the API actually holds, never to the object we
+        # built.  set_tracer_provider is FIRST-WINS: a second call logs
+        # "Overriding of current TracerProvider is not allowed" and does nothing.
+        # So if the block above raised *after* the set succeeded, the fallback
+        # provider is inert while the real one stays installed — and shutting
+        # down the object we built would flush an orphan and leave the live
+        # provider's queue unexported, the exact opposite of the intent.
+        # A ProxyTracerProvider (nothing installed) is not an SDK provider and
+        # has no shutdown(), so leave the global None in that case.
+        _installed = trace.get_tracer_provider()
+        tracer_provider = _installed if isinstance(_installed, TracerProvider) else None
 
     # ── Metrics ───────────────────────────────────────────────────────────────
     try:
         _grpc_endpoint = _OTLP_ENDPOINT.replace("https://", "").replace("http://", "").rstrip("/")
-        meter_provider = MeterProvider(
+        _provider = MeterProvider(
             resource=resource,
             metric_readers=[
                 PeriodicExportingMetricReader(
@@ -243,12 +257,18 @@ def _init_telemetry() -> None:
                 )
             ],
         )
-        metrics.set_meter_provider(meter_provider)
+        metrics.set_meter_provider(_provider)
         _otel_log.info("[otel-metrics] MeterProvider ready → %s", _grpc_endpoint)
     except Exception:
         _otel_log.exception("[otel-metrics] FAILED to initialise — metrics disabled")
-        meter_provider = MeterProvider(resource=resource)
-        metrics.set_meter_provider(meter_provider)
+        try:
+            metrics.set_meter_provider(MeterProvider(resource=resource))
+        except Exception:
+            _otel_log.exception("[otel-metrics] fallback provider also FAILED")
+    finally:
+        # Same first-wins hazard as the tracer provider above — see that comment.
+        _installed = metrics.get_meter_provider()
+        meter_provider = _installed if isinstance(_installed, MeterProvider) else None
 
     # Registered here rather than at import scope so it only ever runs in a
     # process that actually owns providers.
