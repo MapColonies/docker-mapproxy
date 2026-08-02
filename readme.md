@@ -271,7 +271,32 @@ docker compose up -d
 
 Every inbound HTTP request is wrapped in a span by `OpenTelemetryMiddleware` (outermost layer, inside CORS). Spans are exported in OTLP gRPC format to `OTEL_EXPORTER_OTLP_ENDPOINT`.
 
-The `BatchSpanProcessor` is initialised **after** uWSGI forks workers (`--lazy-app`). This is required — initialising the processor in the master process causes its background export thread to die silently on fork.
+The providers are always built **per worker, after the fork** — never in the uWSGI master. `app.py` installs instrumentation at import time against `ProxyTracer` objects, which resolve once a real provider is set.
+
+*When* that happens is decided by the dispatch block at the bottom of `app.py`, from `uwsgi.worker_id()`:
+
+| Import context | Behaviour |
+| --- | --- |
+| uWSGI worker — `lazy-app = true` | initialise immediately; the fork already happened |
+| uWSGI master — `lazy-app = false` | defer to a `postfork` hook |
+| no uWSGI (compose, tests) | initialise immediately |
+
+So the module is correct under either `lazy-app` setting and outside uWSGI entirely. Check `helm/config/mapProxyUwsgi.ini` for which path a given deployment actually takes.
+
+Why per-worker rather than in the master:
+
+- **The exporters' gRPC channels are not fork-safe.** grpc-python does not support forking with live channels. This is the binding constraint — the SDK's at-fork handling restarts export threads but does *not* rebuild an inherited channel.
+- **It avoids depending on private SDK internals.** The at-fork machinery has already moved between versions, so relying on it for correctness is fragile even where it works.
+
+> **Correction.** Earlier revisions of this document claimed a master-initialised `BatchSpanProcessor` has its export thread "die silently on fork". That is **not** accurate. Verified against the SDK pinned in this image (1.44.0): `BatchSpanProcessor` delegates to `BatchProcessor` in `opentelemetry.sdk._shared_internal`, which registers an `os.register_at_fork` handler that restarts the export thread in the child — a span emitted in a forked child was exported with no `force_flush`. `PeriodicExportingMetricReader` is protected the same way, and proxy metric instruments (`_ProxyHistogram`) were confirmed to resolve post-fork too.
+>
+> Beware when checking this yourself: in SDK 1.7.1 the handler lived in `opentelemetry.sdk.trace.export`, so grepping that module on a current SDK reports zero and makes the protection look absent.
+>
+> The reasons to build post-fork are the two above, not export-thread death.
+
+Both providers are flushed via an `atexit` handler, so the final batch is exported on a clean interpreter shutdown.
+
+> **This is best-effort, not a guarantee.** uWSGI's python plugin skips `Py_Finalize()` — and therefore every Python `atexit` handler — when the worker is hijacked, when the worker is still busy serving a request, or when running in async mode. A `max-requests` or `reload-on-rss` recycle that lands while a sibling thread is mid-request will drop whatever is still queued, exactly as before this handler existed. Harakiri kills and `worker-reload-mercy` expiry (`SIGKILL`) bypass it too. Deterministic flushing on recycle would need a uWSGI-level shutdown hook rather than Python `atexit`.
 
 The gRPC channel uses a **bare `host:port`** with `insecure=True`. Passing an `http://` or `https://` prefix causes silent TLS negotiation failure.
 
@@ -345,7 +370,7 @@ The container starts uWSGI with the following fixed flags (not configurable at r
 | `--socket 0.0.0.0:3031`      | uwsgi binary protocol — use as nginx upstream                          |
 | `--http-socket 0.0.0.0:8080` | plain HTTP — use for liveness probes and direct access                 |
 | `--master`                   | master process manages workers                                         |
-| `--lazy-app`                 | workers load `app.py` **after** fork — required for OTel thread safety |
+| `lazy-app = false`           | master loads `app.py` once, then forks — workers share the parsed config copy-on-write |
 | `--harakiri 120`             | kill workers that take > 120 s                                         |
 | `--max-requests 1000`        | recycle worker after 1000 requests                                     |
 | `--reload-on-rss 2048`       | recycle worker if RSS exceeds 2 GB                                     |
