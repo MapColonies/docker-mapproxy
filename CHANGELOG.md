@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.0](https://github.com/MapColonies/docker-mapproxy/compare/v2.0.0...v2.1.0) (2026-08-02)
+
+
+### Miscellaneous Chores
+
+* force alignment to rc track ([9a8e437](https://github.com/MapColonies/docker-mapproxy/commit/9a8e4374afd9d677dc7f2bce68126040c53b160d))
+
 ## [2.0.0](https://github.com/MapColonies/docker-mapproxy/compare/v1.9.2...v2.0.0) (2026-07-19)
 
 
