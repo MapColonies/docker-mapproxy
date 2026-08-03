@@ -1,0 +1,10 @@
+*.*~
+tilestore
+configuration/cache_data
+configuration/city_cache
+configuration/app.py
+city_cache/*.py
+.idea*
+helm/local*
+*.tgz
+*Chart.lock

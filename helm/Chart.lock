@@ -1,9 +1,0 @@
-dependencies:
-- name: nginx
-  repository: oci://acrarolibotnonprod.azurecr.io/helm/common
-  version: 2.2.1
-- name: mclabels
-  repository: oci://acrarolibotnonprod.azurecr.io/helm/infra
-  version: 1.0.1
-digest: sha256:fadb019439a1cd6468211a420dfd6447e6a858a8524b325b2ff2ad52c9bb03a6
-generated: "2026-07-13T14:50:46.98009701+03:00"
