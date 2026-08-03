@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.1](https://github.com/MapColonies/docker-mapproxy/compare/v2.1.0...v2.1.1) (2026-08-03)
+
+
+### Bug Fixes
+
+* upgrade nginx chart to 2.3.1 and drop pinned image tag ([#91](https://github.com/MapColonies/docker-mapproxy/issues/91)) ([b24c9fa](https://github.com/MapColonies/docker-mapproxy/commit/b24c9faff5bd0787032c1cc874eb77645fdb0574))
+
 ## [2.1.0](https://github.com/MapColonies/docker-mapproxy/compare/v2.0.0...v2.1.0) (2026-08-02)
 
 
