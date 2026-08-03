@@ -242,7 +242,6 @@ nginx:
   replicaCount: 1
   image:
     repository: common/nginx
-    tag: "v2.2.1"
   volume:
     storage: 1000Mi
     accessModes: ReadWriteOnce
