@@ -3,6 +3,7 @@ global:
     dockerRegistryUrl: my-registry-url.io
     imagePullSecretName: "my-registry-secret"
     flavor: openshift
+  configManagement: {}
   tracing:
     enabled: false
     url: ""
@@ -213,6 +214,11 @@ initContainer:
   image:
     repository: mapproxinator
     tag: "latest"
+  configManagement:
+    offlineMode: false
+    name: 'mapproxinator'
+    version: 'latest'
+    serverUrl: 'http://localhost:8080/api'
   env:
     logLevel: warn
     ssl:
@@ -394,6 +400,11 @@ mapproxinator:
   port: 80
   targetPort: 8081
   nodePort: 30002
+  configManagement:
+    offlineMode: false
+    name: 'mapproxinator'
+    version: 'latest'
+    serverUrl: 'http://localhost:8080/api'
   env:
     logLevel: warn
     poll:
