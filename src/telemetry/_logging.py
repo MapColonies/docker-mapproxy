@@ -2,7 +2,7 @@
 Logging bootstrap for the telemetry package.
 
 Leaf module — must not import from any other module in this package, so
-instrumentation.py, mapproxy_cache.py, and __init__.py can all import
+instrumentation.py, filecache_tracing.py, and __init__.py can all import
 otel_log from here without circular-import ordering games.
 """
 import logging

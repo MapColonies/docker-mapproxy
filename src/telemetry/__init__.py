@@ -25,7 +25,7 @@ import atexit
 import os
 import socket
 
-from telemetry import instrumentation, mapproxy_cache
+from telemetry import instrumentation, filecache_tracing
 from telemetry._logging import otel_log
 
 _SERVICE_VERSION = os.getenv("SERVICE_VERSION", "0.0.0")
@@ -223,7 +223,7 @@ def install_instrumentation() -> None:
     # configured by telemetry._logging and must not be overwritten.
     LoggingInstrumentor().instrument()
 
-    mapproxy_cache.install()
+    filecache_tracing.install()
 
 
 _init_when_safe_called = False
