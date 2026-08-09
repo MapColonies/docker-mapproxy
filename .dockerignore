@@ -3,3 +3,5 @@
 *.md
 .dockerignore
 LICENSE
+**/__pycache__
+*.pyc
