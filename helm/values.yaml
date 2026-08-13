@@ -394,8 +394,6 @@ nginx:
     accessLog:
       metrics:
         filters:
-          - name: stdout
-            match: nginx.access
           - name: log_to_metrics
             match: nginx.access
             tag: nginx.metrics
