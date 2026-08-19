@@ -65,6 +65,59 @@ jobs:
         name: Test Reporters ${{ matrix.node }}
         path: ./reports/**
 
+  python-smoke-check:
+    name: Python import smoke check
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out TS Project Git repository
+      uses: actions/checkout@v7
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Compile check (app.py + telemetry/*.py)
+      run: python -m py_compile src/app.py src/telemetry/*.py
+
+    # No system GDAL/GEOS/cairo/pango libs needed here -- MapProxy imports
+    # fine without them, and this job only needs to prove app.py + telemetry/
+    # import cleanly, not exercise real tile serving.
+    - name: Install runtime dependencies
+      run: |
+        pip install --no-cache-dir \
+          "MapProxy==6.0.1" \
+          "opentelemetry-api" \
+          "opentelemetry-sdk" \
+          "opentelemetry-distro" \
+          "opentelemetry-instrumentation-wsgi" \
+          "opentelemetry-instrumentation-logging" \
+          "opentelemetry-instrumentation-redis" \
+          "opentelemetry-instrumentation-sqlite3" \
+          "opentelemetry-exporter-otlp-proto-grpc" \
+          "opentelemetry-exporter-otlp-proto-http" \
+          "opentelemetry-propagator-b3" \
+          "opentelemetry-instrumentation-botocore" \
+          "opentelemetry-instrumentation-requests" \
+          "opentelemetry-instrumentation-urllib3" \
+          "opentelemetry-instrumentation-urllib" \
+          "opentelemetry-instrumentation-sqlalchemy" \
+          "opentelemetry-instrumentation-psycopg2" \
+          "psycopg2-binary" \
+          "boto3" \
+          "sqlalchemy" \
+          "redis[hiredis]"
+
+    - name: Import check (app.py + telemetry package)
+      working-directory: src
+      env:
+        MAPPROXY_CONFIG: ${{ github.workspace }}/.github/ci/smoke-test-mapproxy.yaml
+        TELEMETRY_TRACING_ENABLED: "false"
+        OTEL_TRACE_DEBUG: "false"
+        OTEL_PYTHON_LOG_CORRELATION: "false"
+      run: python -c "import app"
+
   build_docker_image:
     runs-on: ubuntu-latest
     steps:

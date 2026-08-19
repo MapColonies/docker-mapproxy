@@ -1,0 +1,16 @@
+# Minimal MapProxy config used only by the CI Python smoke check
+# (.github/workflows/pull_request.yaml) so `import app` has a valid
+# MAPPROXY_CONFIG to build the WSGI app against. Not used at runtime.
+services:
+  demo:
+
+layers:
+  - name: smoke
+    title: smoke-test layer
+    sources: []
+
+caches: {}
+
+grids:
+  webmercator:
+    base: GLOBAL_WEBMERCATOR
