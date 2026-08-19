@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.2](https://github.com/MapColonies/docker-mapproxy/compare/v2.1.1...v2.1.2) (2026-08-19)
+
+
+### Bug Fixes
+
+* sign use_http_get reads so private S3/MinIO buckets work MAPCO-11391 ([#95](https://github.com/MapColonies/docker-mapproxy/issues/95)) ([5450af2](https://github.com/MapColonies/docker-mapproxy/commit/5450af2a20de07cfd2ffa4f73565b9e81426514b))
+
 ## [2.1.1](https://github.com/MapColonies/docker-mapproxy/compare/v2.1.0...v2.1.1) (2026-08-03)
 
 
