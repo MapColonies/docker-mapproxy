@@ -22,6 +22,7 @@ MapProxy running under **uWSGI**, instrumented with **OpenTelemetry** (traces, m
 - [uWSGI Tuning](#uwsgi-tuning)
 - [Health Check](#health-check)
 - [Building the Image Locally](#building-the-image-locally)
+  - [MapProxy Patches](#mapproxy-patches)
 - [Exposed Ports](#exposed-ports)
 - [Volumes](#volumes)
 - [OpenShift / Arbitrary UID](#openshift--arbitrary-uid)
@@ -411,6 +412,33 @@ docker push acrarolibotnonprod.azurecr.io/raster/mapproxy:v6.0.1
 The image uses a **multi-stage build**: all compile-time dependencies (GCC, GDAL/GEOS/PROJ headers) are confined to the builder stage and the final image contains only the pre-built `/opt/venv` virtual environment plus shared runtime libraries.
 
 `MAPPROXY_VERSION` is the single source of truth — it is used in `pip install`, the OCI image labels, and the `SERVICE_VERSION` env var read by `app.py` at runtime.
+
+### MapProxy Patches
+
+The builder stage applies three patches to the installed MapProxy under
+`config/patch/`, each bind-mounted so the patch source never lands in an image
+layer. Every patch verifies itself and **aborts the build** on failure, so a
+MapProxy upgrade that invalidates one is caught at build time rather than in
+production. Build with `--build-arg PATCH_FILES=false` to skip all three and get
+stock upstream behaviour (useful for upstream-compat testing).
+
+| Patch                            | Target                                        | Why                                                                                                       |
+| -------------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `redis.py`                       | `mapproxy/cache/redis.py`                     | Redis resilience — short timeouts, retries, TLS (see the Redis env vars)                                   |
+| `s3.py`                          | `mapproxy/cache/s3.py`                        | S3/MinIO fixes, including signing `use_http_get` reads so private buckets work                             |
+| `wmts_capabilities_compat.py`    | `mapproxy/service/templates/wmts100capabilities.xml` | Reverts two WMTS GetCapabilities changes introduced in MapProxy 6.0.0 that our WMTS clients reject |
+
+The WMTS one restores pre-6.0 capabilities output for exactly two elements —
+upstream MapProxy commit `b8f8949b` added both:
+
+| Element                | MapProxy 6.x (stock)                              | This image                       |
+| ---------------------- | ------------------------------------------------- | -------------------------------- |
+| `<Style>`              | `<Style isDefault="true">`                        | `<Style>`                        |
+| `<ows:SupportedCRS>`   | `urn:ogc:def:crs:EPSG:4326`                       | `EPSG:4326`                      |
+
+Unlike the other two, it rewrites the two lines in place instead of shipping a
+full copy of the template, so an upstream rework of those lines fails the build
+loudly rather than silently reverting unrelated template changes.
 
 ---
 

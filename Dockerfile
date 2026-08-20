@@ -94,6 +94,22 @@ RUN --mount=type=bind,source=config/patch/s3.py,target=/tmp/s3_patch.py \
     echo "[patch] PATCH_FILES=false — s3.py patch skipped (upstream file unchanged)"; \
     fi
 
+# Revert two WMTS GetCapabilities changes MapProxy introduced in 6.0.0 (the
+# <Style isDefault="true"> attribute and the urn:ogc:def:crs: prefix on
+# <ows:SupportedCRS>), which our WMTS clients don't accept.  This one edits the
+# installed template in place instead of replacing it, so an upstream rework of
+# those lines aborts the build rather than silently reverting other template
+# changes.
+RUN --mount=type=bind,source=config/patch/wmts_capabilities_compat.py,target=/tmp/wmts_capabilities_compat.py \
+    if [ "${PATCH_FILES}" = "true" ]; then \
+    python /tmp/wmts_capabilities_compat.py \
+    /opt/venv/lib/python3.11/site-packages/mapproxy/service/templates/wmts100capabilities.xml \
+    && echo "[patch] wmts100capabilities.xml applied and verified" \
+    || { echo "[patch] wmts100capabilities.xml FAILED — build aborted" >&2; exit 1; }; \
+    else \
+    echo "[patch] PATCH_FILES=false — wmts100capabilities.xml patch skipped (upstream file unchanged)"; \
+    fi
+
 # ── Runtime Stage ───────────────────────────────────────────────────────────
 FROM python:3.11-slim-bookworm
 
