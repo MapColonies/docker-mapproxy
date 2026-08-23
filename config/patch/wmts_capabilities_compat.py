@@ -1,20 +1,17 @@
 #!/usr/bin/env python3
-"""Fix two WMTS GetCapabilities changes MapProxy introduced in 6.0.0.
+"""Fix the invalid <ows:SupportedCRS> urn MapProxy emits since 6.0.0.
 
 MapProxy commit b8f8949b ("restful encoding / style isdefault and
-urn:ogc:def:crs for SupportedCRS", first released in 6.0.0) changed the WMTS
-1.0.0 capabilities template in two ways that break our existing clients:
+urn:ogc:def:crs for SupportedCRS", first released in 6.0.0) gave
+<ows:SupportedCRS> in the WMTS 1.0.0 capabilities template a
+"urn:ogc:def:crs:" prefix rendered as "urn:ogc:def:crs:EPSG:4326" — an
+invalid OGC URN: the version field between authority and code is missing,
+so there is a single colon where the standard (OGC 07-092r1) requires two
+("urn:ogc:def:crs:EPSG::4326").  This script keeps the prefix but doubles
+the first colon of srs_name at render time, producing the valid
+"urn:ogc:def:crs:EPSG::4326" form.
 
-  1. <Style> gained an isDefault="true" attribute.  This script removes it,
-     restoring the pre-6.0 bare <Style>.
-  2. <ows:SupportedCRS> gained a "urn:ogc:def:crs:" prefix rendered as
-     "urn:ogc:def:crs:EPSG:4326" — an invalid OGC URN: the version field
-     between authority and code is missing, so there is a single colon where
-     the standard (OGC 07-092r1) requires two ("urn:ogc:def:crs:EPSG::4326").
-     This script keeps the prefix but doubles the first colon of srs_name at
-     render time, producing the valid "urn:ogc:def:crs:EPSG::4326" form.
-
-This script edits exactly those two lines in the installed template and
+This script edits exactly that one line in the installed template and
 leaves every other upstream change in place.  It is applied at build time
 (see the Dockerfile) rather than shipping a full copy of the template, so a
 MapProxy upgrade that reworks these lines aborts the build loudly instead of
@@ -28,12 +25,6 @@ import sys
 # (description, exact text in the installed template, replacement, expected hits)
 EDITS = (
     (
-        'Style isDefault attribute',
-        '<Style isDefault="true">',
-        '<Style>',
-        1,
-    ),
-    (
         'SupportedCRS urn missing version colon',
         '<ows:SupportedCRS>urn:ogc:def:crs:{{tile_matrix_set.srs_name}}</ows:SupportedCRS>',
         "<ows:SupportedCRS>urn:ogc:def:crs:"
@@ -44,7 +35,7 @@ EDITS = (
 )
 
 # Text that must not survive the rewrite, whatever form the template took.
-RESIDUE = ('isDefault', 'urn:ogc:def:crs:{{tile_matrix_set.srs_name}}')
+RESIDUE = ('urn:ogc:def:crs:{{tile_matrix_set.srs_name}}',)
 
 
 def main(argv):
@@ -74,8 +65,8 @@ def main(argv):
     with open(path, 'w', encoding='utf-8') as fh:
         fh.write(template)
 
-    print('[patch] wmts100capabilities.xml: removed Style/isDefault and '
-          'fixed SupportedCRS urn to the valid urn:ogc:def:crs:EPSG::<code> form')
+    print('[patch] wmts100capabilities.xml: fixed SupportedCRS urn to the '
+          'valid urn:ogc:def:crs:EPSG::<code> form')
 
 
 if __name__ == '__main__':
