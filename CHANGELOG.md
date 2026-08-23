@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.3](https://github.com/MapColonies/docker-mapproxy/compare/v2.1.2...v2.1.3) (2026-08-23)
+
+
+### Bug Fixes
+
+* emit OGC-valid WMTS SupportedCRS urn (urn:ogc:def:crs:EPSG::4326) ([#97](https://github.com/MapColonies/docker-mapproxy/issues/97)) ([f94addc](https://github.com/MapColonies/docker-mapproxy/commit/f94addc57698139a03d38b19e83cc4016d5834d9))
+* **helm:** set SSL_CERT_FILE alongside REQUESTS_CA_BUNDLE when root-ca is mounted ([#99](https://github.com/MapColonies/docker-mapproxy/issues/99)) ([4bd5cd3](https://github.com/MapColonies/docker-mapproxy/commit/4bd5cd3ba779a33a7d19530a0b738ed5d621e6d0))
+
 ## [2.1.2](https://github.com/MapColonies/docker-mapproxy/compare/v2.1.1...v2.1.2) (2026-08-19)
 
 
