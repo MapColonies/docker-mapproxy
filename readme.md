@@ -426,15 +426,19 @@ stock upstream behaviour (useful for upstream-compat testing).
 | -------------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | `redis.py`                       | `mapproxy/cache/redis.py`                     | Redis resilience — short timeouts, retries, TLS (see the Redis env vars)                                   |
 | `s3.py`                          | `mapproxy/cache/s3.py`                        | S3/MinIO fixes, including signing `use_http_get` reads so private buckets work                             |
-| `wmts_capabilities_compat.py`    | `mapproxy/service/templates/wmts100capabilities.xml` | Reverts two WMTS GetCapabilities changes introduced in MapProxy 6.0.0 that our WMTS clients reject |
+| `wmts_capabilities_compat.py`    | `mapproxy/service/templates/wmts100capabilities.xml` | Fixes two WMTS GetCapabilities changes introduced in MapProxy 6.0.0 that our WMTS clients reject |
 
-The WMTS one restores pre-6.0 capabilities output for exactly two elements —
-upstream MapProxy commit `b8f8949b` added both:
+The WMTS one corrects exactly two elements — upstream MapProxy commit
+`b8f8949b` changed both:
 
 | Element                | MapProxy 6.x (stock)                              | This image                       |
 | ---------------------- | ------------------------------------------------- | -------------------------------- |
 | `<Style>`              | `<Style isDefault="true">`                        | `<Style>`                        |
-| `<ows:SupportedCRS>`   | `urn:ogc:def:crs:EPSG:4326`                       | `EPSG:4326`                      |
+| `<ows:SupportedCRS>`   | `urn:ogc:def:crs:EPSG:4326`                       | `urn:ogc:def:crs:EPSG::4326`     |
+
+The stock `SupportedCRS` urn is invalid per OGC 07-092r1: the version field
+between authority and code is empty, so the urn must carry a double colon
+(`EPSG::4326`), not the single colon MapProxy renders.
 
 Unlike the other two, it rewrites the two lines in place instead of shipping a
 full copy of the template, so an upstream rework of those lines fails the build

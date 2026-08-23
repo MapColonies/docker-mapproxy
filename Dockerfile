@@ -94,9 +94,10 @@ RUN --mount=type=bind,source=config/patch/s3.py,target=/tmp/s3_patch.py \
     echo "[patch] PATCH_FILES=false — s3.py patch skipped (upstream file unchanged)"; \
     fi
 
-# Revert two WMTS GetCapabilities changes MapProxy introduced in 6.0.0 (the
-# <Style isDefault="true"> attribute and the urn:ogc:def:crs: prefix on
-# <ows:SupportedCRS>), which our WMTS clients don't accept.  This one edits the
+# Fix two WMTS GetCapabilities changes MapProxy introduced in 6.0.0: remove
+# the <Style isDefault="true"> attribute, and correct the <ows:SupportedCRS>
+# urn to the OGC-valid form (urn:ogc:def:crs:EPSG::4326 — upstream renders a
+# single colon before the code, which is invalid).  This one edits the
 # installed template in place instead of replacing it, so an upstream rework of
 # those lines aborts the build rather than silently reverting other template
 # changes.
