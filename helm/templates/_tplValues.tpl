@@ -45,6 +45,14 @@ End of usage example
 Custom definitions
 */}}
 
+{{- define "common.initContainer.configManagement.merged" -}}
+{{- include "common.tplvalues.merge" ( dict "values" ( list .Values.initContainer.configManagement .Values.global.configManagement ) "context" . ) }}
+{{- end -}}
+
+{{- define "common.mapproxinator.configManagement.merged" -}}
+{{- include "common.tplvalues.merge" ( dict "values" ( list .Values.mapproxinator.configManagement .Values.global.configManagement ) "context" . ) }}
+{{- end -}}
+
 {{- define "common.storage.merged" -}}
 {{- include "common.tplvalues.merge" ( dict "values" ( list .Values.storage .Values.global.storage ) "context" . ) }}
 {{- end -}}
