@@ -2,15 +2,16 @@
 {{- $mapproxinatorConfigmapName := include "mapproxinator-configmap.fullname" . -}}
 {{- $db := (include "common.db.merged" .) | fromYaml }}
 {{- $storage := (include "common.storage.merged" .) | fromYaml }}
+{{- $caCertPath := printf "%s/%s" .Values.global.ca.path .Values.global.ca.key }}
         - name: mapproxinator
           image: {{ .cloudProviderDockerRegistryUrl }}{{ .Values.mapproxinator.image.repository }}:{{ .Values.mapproxinator.image.tag }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           env:
             {{- if .Values.global.ca.secretName }}
             - name: REQUESTS_CA_BUNDLE
-              value: {{ printf "%s/%s" .Values.global.ca.path .Values.global.ca.key | quote }}
+              value: {{ $caCertPath | quote }}
             - name: NODE_EXTRA_CA_CERTS
-              value: {{ printf "%s/%s" .Values.global.ca.path .Values.global.ca.key | quote }}
+              value: {{ $caCertPath | quote }}
             {{- end }}
             - name: INIT_MODE
               value: "false"

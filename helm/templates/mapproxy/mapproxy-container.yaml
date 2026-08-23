@@ -3,6 +3,7 @@
 {{- $storage := (include "common.storage.merged" .) | fromYaml }}
 {{- $fs := (include "common.fs.merged" .) | fromYaml }}
 {{- $metrics := (include "common.metrics.merged" .) | fromYaml }}
+{{- $caCertPath := printf "%s/%s" .Values.global.ca.path .Values.global.ca.key }}
         - name: mapproxy
           image: {{ .cloudProviderDockerRegistryUrl }}{{ .Values.mapproxy.image.repository }}:{{ .Values.mapproxy.image.tag }}
           imagePullPolicy: {{ .Values.imagePullPolicy }} 
@@ -17,9 +18,11 @@
               value: {{ .Values.mapproxy.redis.healthCheckInterval | quote }}
             {{- if .Values.global.ca.secretName }}
             - name: REQUESTS_CA_BUNDLE
-              value: {{ printf "%s/%s" .Values.global.ca.path .Values.global.ca.key | quote }}
+              value: {{ $caCertPath | quote }}
             - name: NODE_EXTRA_CA_CERTS
-              value: {{ printf "%s/%s" .Values.global.ca.path .Values.global.ca.key | quote }}
+              value: {{ $caCertPath | quote }}
+            - name: SSL_CERT_FILE
+              value: {{ $caCertPath | quote }}
             {{- end }}
             {{- if eq (upper $storage.tilesStorageProvider) "S3" }}
             - name: AWS_ACCESS_KEY_ID
