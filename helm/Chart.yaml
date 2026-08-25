@@ -6,8 +6,8 @@ version: 2.1.1
 appVersion: 2.1.1
 dependencies:
   - name: nginx
-    version: 2.3.1
-    repository: file:///home/oferade/repos/libot/nginx/helm/
+    version: 2.4.0
+    repository: oci://acrarolibotnonprod.azurecr.io/helm/common
   - name: mclabels
     version: 1.0.1
     repository: oci://acrarolibotnonprod.azurecr.io/helm/infra
