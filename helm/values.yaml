@@ -288,43 +288,40 @@ nginx:
       domain: "raster"
 
   extraVolumes:
-  - name: nginx-config
-    configMap:
-      # must match nginx-configmap.fullname (<release>-<chart>-nginx-configmap);
-      # tpl runs in the nginx subchart context, so the chart name is spelled out
-      name: "{{ .Release.Name }}-mapproxy-nginx-configmap"
-  - name: cache #TODO: Find solution to mount cache volume with condition
-    emptyDir:
-      sizeLimit: "{{ .Values.volume.storage }}"
-      medium: "Memory"
+    - name: nginx-config
+      configMap:
+        # must match nginx-configmap.fullname (<release>-<chart>-nginx-configmap);
+        # tpl runs in the nginx subchart context, so the chart name is spelled out
+        name: "{{ .Release.Name }}-mapproxy-nginx-configmap"
+    - name: cache #TODO: Find solution to mount cache volume with condition
+      emptyDir:
+        sizeLimit: "{{ .Values.volume.storage }}"
+        medium: "Memory"
 
   extraVolumeMounts:
-  - name: nginx-config
-    mountPath: "/etc/nginx/log_format.conf"
-    subPath: log_format.conf
-  - name: nginx-config
-    mountPath: "/etc/nginx/nginx.mapproxy.conf"
-    subPath: nginx.mapproxy.conf
-  - name: nginx-config
-    mountPath: "/etc/nginx/nginx.mapproxy.wmts.conf"
-    subPath: nginx.mapproxy.wmts.conf
-  - name: nginx-config
-    mountPath: "/etc/nginx/conf.d/mapproxy-http.conf"
-    subPath: mapproxy-http.conf
-  - name: nginx-config
-    mountPath: "/etc/nginx/conf.d/extensions/mapproxy-server.conf"
-    subPath: mapproxy-server.conf
-  - name: nginx-config
-    mountPath: "/etc/nginx/conf.d/extensions/mapproxy-location.conf"
-    subPath: mapproxy-location.conf
-  - name: cache
-    mountPath: "/cache"
+    - name: nginx-config
+      mountPath: "/etc/nginx/nginx.mapproxy.conf"
+      subPath: nginx.mapproxy.conf
+    - name: nginx-config
+      mountPath: "/etc/nginx/nginx.mapproxy.wmts.conf"
+      subPath: nginx.mapproxy.wmts.conf
+    - name: nginx-config
+      mountPath: "/etc/nginx/conf.d/mapproxy-http.conf"
+      subPath: mapproxy-http.conf
+    - name: nginx-config
+      mountPath: "/etc/nginx/conf.d/extensions/mapproxy-server.conf"
+      subPath: mapproxy-server.conf
+    - name: nginx-config
+      mountPath: "/etc/nginx/conf.d/extensions/mapproxy-location.conf"
+      subPath: mapproxy-location.conf
+    - name: cache
+      mountPath: "/cache"
 
   route:
     enabled: true
     routesMapping:
-    - host:
-      path: /api/raster/v1
+      - host:
+        path: /api/raster/v1
     timeout:
       enabled: false # defaults to 30s by openshift
       duration: 60s # supported units (us, ms, s, m, h, d)
@@ -384,6 +381,103 @@ nginx:
         requests:
           cpu: 100m
           memory: 128Mi
+  fluentbit:
+    enabled: true
+    debug:
+      enabled: true
+      stages:
+        received: false
+        parsed: true
+    output:
+      logs:
+        host: infra-alloy.infra-dev.svc.cluster.local
+    accessLog:
+      metrics:
+        filters:
+          - name: log_to_metrics
+            match: nginx.access
+            tag: nginx.metrics
+            metric_mode: counter
+            metric_namespace: mapproxy
+            metric_subsystem: wms
+            metric_name: requests_total
+            metric_description: Total WMS requests
+            regex: ogc_service ^WMS$
+            label_field:
+              - ogc_operation
+              - ogc_layer
+              - ogc_format
+              - result
+
+          - name: log_to_metrics
+            match: nginx.access
+            tag: nginx.metrics
+            metric_mode: counter
+            metric_namespace: mapproxy
+            metric_subsystem: wmts
+            metric_name: requests_total
+            metric_description: Total WMTS requests
+            regex: ogc_service ^WMTS$
+            add_label: client_name $Attributes['mapcolonies.http.auth.token.client_name']
+            label_field:
+              - ogc_operation
+              - ogc_layer
+              - ogc_zoom_group
+              - ogc_format
+              - result
+
+          # Error-rate counter: covers ALL traffic, not just requests that matched
+          # WMS/WMTS - answers "is the endpoint healthy" regardless of OGC extraction.
+          # Labeled by exact status_code; few distinct codes actually occur, so this
+          # stays cheap.
+          - name: log_to_metrics
+            match: nginx.access
+            tag: nginx.metrics
+            metric_mode: counter
+            metric_namespace: nginx
+            metric_subsystem: http
+            metric_name: errors_total
+            metric_description: Total nginx HTTP error responses by status code
+            regex: $Attributes['http.response.status_code'] ^[45]
+            add_label: status_code $Attributes['http.response.status_code']
+
+          # Latency histograms: protocol-split like the counters, but the only label
+          # is result (ok/error) - kept as a separate label rather than dropped,
+          # since a slow upstream timeout (502/504) and a fast validation failure
+          # (400) are different problems and both are worth seeing. No layer/zoom -
+          # a histogram is many bucket-series per label combination already.
+          - name: log_to_metrics
+            match: nginx.access
+            tag: nginx.metrics
+            metric_mode: histogram
+            metric_namespace: mapproxy
+            metric_subsystem: wms
+            metric_name: request_duration_seconds
+            metric_description: WMS request latency
+            value_field: request_time_seconds
+            regex: ogc_service ^WMS$
+            label_field:
+              - result
+
+          - name: log_to_metrics
+            match: nginx.access
+            tag: nginx.metrics
+            metric_mode: histogram
+            metric_namespace: mapproxy
+            metric_subsystem: wmts
+            metric_name: request_duration_seconds
+            metric_description: WMTS request latency
+            value_field: request_time_seconds
+            regex: ogc_service ^WMTS$
+            label_field:
+              - result
+    lua:
+      enabled: true
+      configMap:
+        name: "{{ .Release.Name }}-mapproxy-nginx-configmap"
+        key: custom.lua
+      calls:
+        allRecords: parse_mapproxy_request
 
 mapproxinator:
   enabled: true
