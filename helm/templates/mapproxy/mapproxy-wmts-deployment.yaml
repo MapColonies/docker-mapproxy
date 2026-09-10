@@ -6,12 +6,6 @@
 {{- $replicaCount := .Values.mapproxy.wmts.replicaCount }}
 {{- $wmtsDeploymentName := include "wmts-deployment.fullname" . }}
 
-{{- if .Values.global.ca.enabled }}
-{{- if and .Values.global.ca.secretName (not .Values.global.ca.secretName) }}
-{{- fail "When using external ca secret the value for .Values.global.ca.secretName should be set" }}
-{{- end }}
-{{- end }}
-
 {{- if .Values.authentication.ssl.enabled }}
 {{- if and .Values.authentication.ssl.useExternal (not .Values.authentication.ssl.externalSecretName) }}
 {{- fail "When using external ssl secret the value for .Values.authentication.ssl.externalSecretName should be set" }}

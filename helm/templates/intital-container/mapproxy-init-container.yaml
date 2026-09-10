@@ -71,7 +71,7 @@
               name: internal-storage
               subPath: config/mapproxy.yaml
             {{- end }}
-            {{- if .Values.global.ca.enabled }}
+            {{- if .Values.global.ca.secretName }}
             - name: REQUESTS_CA_BUNDLE
               value: {{ printf "%s/%s" .Values.global.ca.path .Values.global.ca.key | quote }}
             {{- end }}
