@@ -2,7 +2,6 @@
 {{- $configmapName := include "configmap.fullname" . -}}
 {{- $storage := (include "common.storage.merged" .) | fromYaml }}
 {{- $fs := (include "common.fs.merged" .) | fromYaml }}
-{{- $metrics := (include "common.metrics.merged" .) | fromYaml }}
 {{- $caCertPath := printf "%s/%s" .Values.global.ca.path .Values.global.ca.key }}
         - name: mapproxy
           image: {{ .cloudProviderDockerRegistryUrl }}{{ .Values.mapproxy.image.repository }}:{{ .Values.mapproxy.image.tag }}
@@ -47,7 +46,7 @@
               value: {{ .Values.mapproxy.uwsgi.threads | quote }}
             - name: HARAKIRI
               value: {{ .Values.mapproxy.uwsgi.harakiri | quote }}
-            {{- if $metrics.enabled }}
+            {{- if .Values.telemetry.metrics.enabled }}
             # Stats server for uwsgi-exporter / Prometheus
             - name: UWSGI_STATS_ENABLED
               value: "true"
