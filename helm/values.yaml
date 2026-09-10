@@ -3,16 +3,8 @@ global:
     dockerRegistryUrl: my-registry-url.io
     imagePullSecretName: "my-registry-secret"
     flavor: openshift
-  tracing:
-    enabled: false
-    url: ""
-    samplingRatioDenominator: 1000
-  metrics:
-    enabled: false
-    url: ""
-    prometheus:
-      scrape: false
-      port: 9117
+  telemetry:
+    tracing: {}
   environment: ""
   authentication:
     jwtPublicKeySecretName: map-colonies-jwks
@@ -73,22 +65,19 @@ db:
   name: ""
   port: 5432
   sslEnabled: false
-  schema: ""
+  schema: MapproxyConfig
   rejectUnauthorized: false
   secrets:
     useExternal: false
     externalSecretName: ""
 
-tracing:
-  enabled: false
-  url: ""
-  # samplingRatioDenominator: 1000
-metrics:
-  enabled: false
-  url: ""
-  prometheus:
-    scrape: false
-    port: 9117
+telemetry:
+  tracing:
+    enabled: true
+    url: http://localhost:4317
+    samplingRatioDenominator: 1000
+  metrics:
+    enabled: true
 
 # add pod annotations
 # example:
@@ -101,7 +90,7 @@ environment: development
 initialDelaySeconds: 60
 splunkIndex: ""
 resetOnConfigChange: true
-imagePullPolicy: Always
+imagePullPolicy: IfNotPresent
 
 cloudProvider:
   dockerRegistryUrl: my-registry-url.io
@@ -160,9 +149,6 @@ mapproxy:
   image:
     repository: docker-mapproxy
     tag: "latest"
-  db:
-    nameOverride:
-    schema: MapproxyConfig
   port: 80
   targetPort: 8080
   uwsgi:

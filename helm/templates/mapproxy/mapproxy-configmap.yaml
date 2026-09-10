@@ -3,7 +3,8 @@
 {{- $releaseName := .Release.Name -}}
 {{- $configmapName := include "configmap.fullname" . -}}
 {{- $s3 := (include "common.s3.merged" .) | fromYaml }}
-{{- $tracing := (include "common.tracing.merged" .) | fromYaml }}
+{{- $tracing := .Values.telemetry.tracing -}}
+{{- $tracingUrl := include "mapproxy.tracingUrl" . -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -21,7 +22,9 @@ data:
   S3_USERNAME: {{ $s3.username | quote }}
   # ── Telemetry / Tracing ───────────────────────────────────────────────────
   TELEMETRY_TRACING_ENABLED: {{ $tracing.enabled | quote }}
-  TELEMETRY_TRACING_ENDPOINT: {{ $tracing.url | quote }}
+  {{- if $tracing.enabled }}
+  TELEMETRY_TRACING_ENDPOINT: {{ $tracingUrl | quote }}
+  {{- end }}
   TELEMETRY_TRACING_SAMPLING_RATIO_DENOMINATOR: {{ $tracing.samplingRatioDenominator | quote }}
   TELEMETRY_BOTO_ENABLED: {{ .Values.mapproxy.env.telemetry.boto.enabled | quote }}
   TELEMETRY_BOTO_CAPTURE_HEADERS: {{ .Values.mapproxy.env.telemetry.boto.captureHeaders | quote }}

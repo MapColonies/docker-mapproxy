@@ -115,3 +115,14 @@ Returns the cloud provider image pull secret name from global if exists or from 
 {{-  quote (join "," $headerList) -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Returns the tracing url from global if exists or from the chart's values
+*/}}
+{{- define "mapproxy.tracingUrl" -}}
+{{- if .Values.global.telemetry.tracing.url }}
+    {{- .Values.global.telemetry.tracing.url -}}
+{{- else if .Values.telemetry.tracing.url -}}
+    {{- .Values.telemetry.tracing.url -}}
+{{- end -}}
+{{- end -}}
