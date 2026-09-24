@@ -24,7 +24,7 @@ data:
   LOG_PRETTY_PRINT_ENABLED: {{ .Values.mapproxinator.env.logPrettyPrintEnabled | quote }}
   {{ if $tracing.enabled }}
   TELEMETRY_TRACING_ENABLED: 'true'
-  TELEMETRY_TRACING_URL: {{ $tracing.url }}
+  TELEMETRY_TRACING_URL: {{ .Values.mapproxinator.tracing.url | default $tracing.url }}
   {{ end }}
   {{ if $metrics.enabled }}
   TELEMETRY_METRICS_ENABLED: 'true'

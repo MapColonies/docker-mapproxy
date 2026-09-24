@@ -388,6 +388,14 @@ nginx:
 mapproxinator:
   enabled: true
   replicaCount: 1
+  tracing:
+    # The mapproxinator app exports OTLP over HTTP (@map-colonies/telemetry ->
+    # @opentelemetry/exporter-trace-otlp-proto), while the mapproxy container
+    # exports OTLP over gRPC. When the collector serves those on different ports
+    # the shared `tracing.url` cannot satisfy both, so set the HTTP endpoint here,
+    # e.g. "http://otel-collector:4318/v1/traces".
+    # Empty means inherit the shared tracing.url.
+    url: ""
   image:
     repository: mapproxinator
     tag: "latest"
