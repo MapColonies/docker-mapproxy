@@ -381,16 +381,10 @@ nginx:
         requests:
           cpu: 100m
           memory: 128Mi
+  # Off by default - enable per environment, together with fluentbit.output.logs.host
+  # (the central Alloy OTLP logs endpoint, required by the nginx chart when enabled).
   fluentbit:
-    enabled: true
-    debug:
-      enabled: true
-      stages:
-        received: false
-        parsed: true
-    output:
-      logs:
-        host: infra-alloy.infra-dev.svc.cluster.local
+    enabled: false
     accessLog:
       metrics:
         filters:
@@ -404,6 +398,7 @@ nginx:
             metric_description: Total WMS requests
             regex: ogc_service ^WMS$
             label_field:
+              - client_name
               - ogc_operation
               - ogc_layer
               - ogc_format
@@ -418,8 +413,8 @@ nginx:
             metric_name: requests_total
             metric_description: Total WMTS requests
             regex: ogc_service ^WMTS$
-            add_label: client_name $Attributes['mapcolonies.http.auth.token.client_name']
             label_field:
+              - client_name
               - ogc_operation
               - ogc_layer
               - ogc_zoom_group
